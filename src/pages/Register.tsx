@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore"
 import { useNavigate } from "react-router-dom"
 import { useAuthState } from "react-firebase-hooks/auth"
+import Layout from "@/components/Layout"
 
 const Register = () => {
   const [user] = useAuthState(auth)
@@ -48,6 +49,7 @@ const Register = () => {
         ownerId: user.uid,
         createdAt: serverTimestamp(),
       })
+      console.log("🚀 ~ businessRef ~ user.uid:", user.uid)
 
       // Update user profile with businessId and role
       const profileRef = doc(db, "profiles", user.uid)
@@ -65,25 +67,27 @@ const Register = () => {
   }
 
   return (
-    <div className="p-6 max-w-md mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Register Your Business</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          className="border w-full p-2 rounded"
-          placeholder="Business Name"
-          value={businessName}
-          onChange={(e) => setBusinessName(e.target.value)}
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
-        >
-          {loading ? "Creating..." : "Create Business"}
-        </button>
-      </form>
-    </div>
+    <Layout>
+      <div className="p-6 max-w-md mx-auto">
+        <h1 className="text-2xl font-bold mb-4">Register Your Business</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            className="border w-full p-2 rounded"
+            placeholder="Business Name"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+          >
+            {loading ? "Creating..." : "Create Business"}
+          </button>
+        </form>
+      </div>
+    </Layout>
   )
 }
 

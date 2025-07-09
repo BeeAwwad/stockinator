@@ -1,7 +1,7 @@
 export type ProfileType = {
   id: string
   businessId: string
-  role: "owner" | "vendor"
+  role: "owner" | "vendor" | "pending"
   invitedEmail?: string
   displayName?: string
   createdAt: Date

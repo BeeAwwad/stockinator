@@ -7,7 +7,6 @@ import { doc, getDoc } from "firebase/firestore"
 const Header = () => {
   const [user] = useAuthState(auth)
   const [role, setRole] = useState<string | null>(null)
-  console.log("🚀 ~ Header ~ role:", role)
   const [hasBusiness, setHasBusiness] = useState<boolean>(false)
   const navigate = useNavigate()
 
