@@ -1,67 +1,110 @@
 import { useAuthState } from "react-firebase-hooks/auth"
-import { db, auth } from "../firebase"
 import {
+  collection,
   doc,
-  getDoc,
+  onSnapshot,
   query,
   where,
-  collection,
-  getDocs,
   deleteDoc,
+  // getDoc,
 } from "firebase/firestore"
+import { db, auth } from "../lib/firebase"
 import { useEffect, useState } from "react"
-import type { ProfileType } from "@/utils/types"
+import type { ProfileType } from "@/lib/types"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+  AlertDialogDescription,
+} from "@/components/ui/alert-dialog"
+import { Button } from "./ui/button"
 
 const VendorList = () => {
   const [user] = useAuthState(auth)
   const [vendors, setVendors] = useState<ProfileType[]>([])
+  const [invites, setInvites] = useState<{ id: string; email: string }[]>([])
   const [isOwner, setIsOwner] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<{
+    id: string
+    type: "vendor" | "invite"
+  } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchVendors() {
-      if (!user) return
-      setLoading(true)
+    if (!user) return
 
-      const profileRef = doc(db, "profiles", user.uid)
-      const profileSnap = await getDoc(profileRef)
-      const profileData = profileSnap.data()
+    const profileRef = doc(db, "profiles", user.uid)
 
+    const unsubscribe = onSnapshot(profileRef, async (snap) => {
+      const profileData = snap.data()
       if (!profileData?.businessId) return
 
-      setIsOwner(profileData.role === "owner")
       setBusinessId(profileData.businessId)
+      setIsOwner(profileData.role === "owner")
 
-      const vendorsRef = collection(db, "profiles")
-      const q = query(
-        vendorsRef,
+      const vendorQuery = query(
+        collection(db, "profiles"),
         where("businessId", "==", profileData.businessId),
         where("role", "==", "vendor")
       )
 
-      const snap = await getDocs(q)
-      const vendorList = snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ProfileType[]
+      const inviteQuery = query(
+        collection(db, "invites"),
+        where("businessId", "==", profileData.businessId),
+        where("role", "==", "vendor")
+      )
 
-      setVendors(vendorList)
+      const unsubscribeVendors = onSnapshot(vendorQuery, (snap) => {
+        const list = snap.docs.map((doc) => ({
+          uid: doc.id,
+          ...doc.data(),
+        })) as ProfileType[]
+        setVendors(list)
+      })
+
+      const unsubscribeInvites = onSnapshot(inviteQuery, (snap) => {
+        const list = snap.docs.map((doc) => ({
+          id: doc.id,
+          email: doc.data().email,
+        }))
+        setInvites(list)
+      })
+
       setLoading(false)
-    }
 
-    fetchVendors()
+      // cleanup nested listeners when auth or businessId changes
+      return () => {
+        unsubscribeVendors()
+        unsubscribeInvites()
+      }
+    })
+
+    return () => unsubscribe()
   }, [user])
 
-  const handleRemove = async (vendorId: string) => {
-    const confirmed = confirm("Are you sure you want to remove this vendor?")
-    if (!confirmed || !vendorId || vendorId === user?.uid) return
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return
+    const { id, type } = pendingDelete
 
     try {
-      await deleteDoc(doc(db, "profiles", vendorId))
-      setVendors((prev) => prev.filter((v) => v.id !== vendorId))
+      if (type === "vendor") {
+        await deleteDoc(doc(db, "profiles", id))
+        toast.success("Vendor removed.")
+      } else {
+        await deleteDoc(doc(db, "invites", id))
+        toast.success("Invite cancelled.")
+      }
     } catch (err) {
-      console.error("Failed to delete vendor:", err)
+      console.error("Failed to delete:", err)
+      toast.error("Failed to remove. Please try again.")
+    } finally {
+      setPendingDelete(null)
     }
   }
 
@@ -70,36 +113,83 @@ const VendorList = () => {
 
   return (
     <div className="mt-6">
-      <h2 className="font-bold mb-2">Vendors in Business</h2>
-      {vendors.length === 0 ? (
+      <h2 className="font-bold mb-2">Vendors</h2>
+
+      {vendors.length === 0 && invites.length === 0 ? (
         <p className="text-sm text-gray-500">No vendors yet.</p>
       ) : (
         <ul className="space-y-2">
           {vendors.map((v, i) => (
             <li
-              key={v.id}
-              className="flex justify-between items-center bg-gray-100 p-2 rounded"
+              key={v.uid}
+              className="flex justify-between items-center bg-green-50 p-2 rounded"
             >
-              <div>
-                {v.displayName || v.invitedEmail || `Vendor ${i + 1}`}
-                {!v.displayName && (
-                  <span className="text-xs text-yellow-600 ml-2">
-                    (Pending)
-                  </span>
-                )}
-              </div>
+              <div>{v.displayName || v.email || `Vendor ${i + 1}`}</div>
               {isOwner && (
-                <button
-                  onClick={() => handleRemove(v.id)}
+                <Button
+                  variant="ghost"
                   className="text-red-600 hover:underline text-sm"
+                  onClick={() =>
+                    setPendingDelete({ id: v.uid, type: "vendor" })
+                  }
                 >
                   Remove
-                </button>
+                </Button>
+              )}
+            </li>
+          ))}
+
+          {invites.map((inv) => (
+            <li
+              key={inv.id}
+              className="flex justify-between items-center bg-yellow-50 p-2 rounded"
+            >
+              <div>
+                {inv.email}
+                <span className="text-xs text-yellow-600 ml-2">(Invited)</span>
+              </div>
+              {isOwner && (
+                <Button
+                  variant="ghost"
+                  className="text-red-600 hover:underline text-sm"
+                  onClick={() =>
+                    setPendingDelete({ id: inv.id, type: "invite" })
+                  }
+                >
+                  Cancel
+                </Button>
               )}
             </li>
           ))}
         </ul>
       )}
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={() => setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingDelete?.type === "vendor"
+                ? "Remove Vendor?"
+                : "Cancel Invite?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.type === "vendor"
+                ? "Are you sure you want to remove this vendor?"
+                : "Are you sure you want to cancel this invite?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

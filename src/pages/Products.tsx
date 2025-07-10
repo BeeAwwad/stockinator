@@ -7,11 +7,11 @@ import {
   serverTimestamp,
 } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
-import { auth, db } from "../firebase"
+import { auth, db } from "../lib/firebase"
 import { useEffect, useState } from "react"
 import { doc, getDoc } from "firebase/firestore"
 import Layout from "@/components/Layout"
-import type { ProductType, ProfileType } from "@/utils/types"
+import type { ProductType, ProfileType } from "@/lib/types"
 
 const Products = () => {
   const [user] = useAuthState(auth)
@@ -37,7 +37,7 @@ const Products = () => {
       const q = query(productsRef)
       const snap = await getDocs(q)
       setProducts(
-        snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as ProductType))
+        snap.docs.map((doc) => ({ uid: doc.id, ...doc.data() } as ProductType))
       )
     }
   }
@@ -115,7 +115,7 @@ const Products = () => {
 
         <div className="grid gap-4">
           {products.map((product) => (
-            <div key={product.id} className="border p-4 rounded">
+            <div key={product.uid} className="border p-4 rounded">
               <h2 className="font-semibold">{product.name}</h2>
               <p>SKU: {product.sku}</p>
               <p>Price: ₦{product.price}</p>

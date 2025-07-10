@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useAuthState } from "react-firebase-hooks/auth"
-import { auth, db } from "../firebase"
+import { auth, db } from "../lib/firebase"
 import { useEffect, useState } from "react"
 import { doc, getDoc } from "firebase/firestore"
 
@@ -38,7 +38,7 @@ const Header = () => {
         {hasBusiness && (
           <>
             <Link to="/" className="hover:underline">
-              Dashboard
+              Inventory
             </Link>
             <Link to="/products" className="hover:underline">
               Products

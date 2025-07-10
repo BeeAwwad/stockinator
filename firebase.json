@@ -12,5 +12,21 @@
       ],
       "predeploy": []
     }
-  ]
+  ],
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProjectMode": true,
+    "auth": {
+      "port": 9099
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
 }

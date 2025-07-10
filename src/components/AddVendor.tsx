@@ -3,24 +3,27 @@ import {
   collection,
   query,
   where,
-  getDocs,
   doc,
   setDoc,
   getDoc,
+  Timestamp,
+  onSnapshot,
 } from "firebase/firestore"
-import { db, auth } from "../firebase"
+import { db, auth } from "../lib/firebase"
 import { useAuthState } from "react-firebase-hooks/auth"
+import { toast } from "sonner"
+import { nanoid } from "nanoid"
 
 const AddVendor = () => {
   const [user] = useAuthState(auth)
   const [email, setEmail] = useState("")
   const [vendorCount, setVendorCount] = useState(0)
   const [businessId, setBusinessId] = useState<string | null>(null)
-  const [message, setMessage] = useState("")
 
   useEffect(() => {
-    async function loadBusinessId() {
-      if (!user) return
+    if (!user) return
+
+    const loadAndListen = async () => {
       const profileRef = doc(db, "profiles", user.uid)
       const profileSnap = await getDoc(profileRef)
       const profileData = profileSnap.data()
@@ -30,53 +33,52 @@ const AddVendor = () => {
       const bId = profileData.businessId
       setBusinessId(bId)
 
-      const q = query(
-        collection(db, "profiles"),
+      const invitesQuery = query(
+        collection(db, "invites"),
         where("businessId", "==", bId),
         where("role", "==", "vendor")
       )
 
-      const vendorSnap = await getDocs(q)
-      setVendorCount(vendorSnap.size)
+      const unsubscribe = onSnapshot(invitesQuery, (snap) => {
+        setVendorCount(snap.size)
+      })
+
+      return unsubscribe
     }
 
-    loadBusinessId()
+    const cleanup = loadAndListen()
+
+    return () => {
+      cleanup?.then((unsubscribe) => unsubscribe?.())
+    }
   }, [user])
 
   const handleAddVendor = async () => {
-    setMessage("")
-    if (!email || !businessId) return
+    const vendorEmail = email.trim().toLowerCase()
+
+    if (!vendorEmail || !businessId) return
 
     if (vendorCount >= 2) {
-      setMessage("❌ Vendor limit reached (2 max).")
+      toast.error("Vendor limit reached (2 max).")
       return
     }
 
     try {
-      // TEMP: Use email as ID placeholder (in real apps use Auth UID)
-      const fakeVendorId = email.toLowerCase().replace(/[^a-z0-9]/g, "")
+      const inviteId = nanoid()
 
-      const vendorRef = doc(db, "profiles", fakeVendorId)
-      const snap = await getDoc(vendorRef)
-
-      if (snap.exists()) {
-        setMessage("⚠️ A vendor with this ID/email already exists.")
-        return
-      }
-
-      await setDoc(vendorRef, {
-        role: "vendor",
+      await setDoc(doc(db, "invites", inviteId), {
+        email: vendorEmail,
         businessId,
-        createdAt: new Date(),
-        invitedEmail: email,
+        role: "vendor",
+        invitedBy: user?.uid,
+        createdAt: Timestamp.now(),
       })
 
-      setVendorCount((prev) => prev + 1)
       setEmail("")
-      setMessage("✅ Vendor added successfully!")
+      toast.success("Vendor invited successfully!")
     } catch (err) {
-      console.error(err)
-      setMessage("❌ Failed to add vendor.")
+      console.error("Failed to invite vendor:", err)
+      toast.error("Failed to invite vendor. Please try again.")
     }
   }
 
@@ -86,7 +88,7 @@ const AddVendor = () => {
     <div className="border p-4 mt-6 rounded bg-gray-50">
       <h3 className="text-lg font-semibold mb-2">Add Vendor</h3>
       <p className="text-sm text-gray-600 mb-4">
-        Vendors allowed: {vendorCount}/2
+        Vendors invited: {vendorCount}/2
       </p>
 
       <input
@@ -104,8 +106,6 @@ const AddVendor = () => {
       >
         Add Vendor
       </button>
-
-      {message && <p className="mt-2 text-sm">{message}</p>}
     </div>
   )
 }

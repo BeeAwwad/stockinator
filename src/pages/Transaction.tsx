@@ -7,12 +7,12 @@ import {
   serverTimestamp,
   //   where,
 } from "firebase/firestore"
-import { auth, db } from "../firebase"
+import { auth, db } from "../lib/firebase"
 import { useAuthState } from "react-firebase-hooks/auth"
 import { useEffect, useState } from "react"
 import { doc } from "firebase/firestore"
 import Layout from "@/components/Layout"
-import type { ProductType, ProfileType } from "@/utils/types"
+import type { ProductType, ProfileType } from "@/lib/types"
 
 const Transaction = () => {
   const [user] = useAuthState(auth)
@@ -38,7 +38,7 @@ const Transaction = () => {
       )
       setProducts(
         productsSnap.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as ProductType)
+          (doc) => ({ uid: doc.id, ...doc.data() } as ProductType)
         )
       )
     }
@@ -83,7 +83,7 @@ const Transaction = () => {
         >
           <option value="">Select Product</option>
           {products.map((product) => (
-            <option key={product.id} value={product.id}>
+            <option key={product.uid} value={product.uid}>
               {product.name} (Stock: {product.stock})
             </option>
           ))}
