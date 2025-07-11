@@ -38,7 +38,7 @@ const Header = () => {
         {hasBusiness && (
           <>
             <Link to="/" className="hover:underline">
-              Inventory
+              Stockinator
             </Link>
             <Link to="/products" className="hover:underline">
               Products

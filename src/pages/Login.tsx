@@ -16,15 +16,61 @@ import {
   deleteDoc,
 } from "firebase/firestore"
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import type { User } from "firebase/auth"
 import { toast } from "sonner"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { z } from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+
+const loginSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    confirmPassword: z.string().optional(),
+    // displayName: z.string(),
+    mode: z.enum(["login", "signup"]),
+  })
+  .refine(
+    (data) => data.mode === "login" || data.password === data.confirmPassword,
+    {
+      path: ["confirmPassword"],
+      message: "Passwords do not match",
+    }
+  )
+
+type FormData = z.infer<typeof loginSchema>
+
 const Login = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isRegistering, setIsRegistering] = useState(false)
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+      // displayName: "",
+      mode: "login",
+    },
+  })
+
+  const { register, handleSubmit, watch, formState } = form
+  const { errors } = formState
+  const mode = watch("mode")
 
   const handleAuth = async (user: User) => {
     const { uid, displayName, email } = user
@@ -77,7 +123,7 @@ const Login = () => {
       navigate(role === "owner" || role === "vendor" ? "/" : "/register")
     } catch (err) {
       console.error("Auth error:", err)
-      toast.error("Failed to handle login. Check console for details.")
+      toast.error("Login failed. Check console for details.")
     }
   }
 
@@ -94,17 +140,23 @@ const Login = () => {
     }
   }
 
-  const handleEmailAuth = async () => {
+  const onSubmit = async (data: FormData) => {
+    setLoading(true)
+
     try {
-      setLoading(true)
-      const result = isRegistering
-        ? await createUserWithEmailAndPassword(auth, email, password)
-        : await signInWithEmailAndPassword(auth, email, password)
+      const result =
+        data.mode === "login"
+          ? await signInWithEmailAndPassword(auth, data.email, data.password)
+          : await createUserWithEmailAndPassword(
+              auth,
+              data.email,
+              data.password
+            )
 
       await handleAuth(result.user)
     } catch (err) {
-      console.error("Email auth error:", err)
-      toast.error("Login failed. Please check your credentials or try again.")
+      console.log("onSubmit ~ Email auth error:", err)
+      toast.error("Login or registration failed.")
     } finally {
       setLoading(false)
     }
@@ -112,52 +164,105 @@ const Login = () => {
 
   return (
     <div className="flex items-center justify-center h-screen">
-      <div className="w-full max-w-md bg-white shadow p-6 rounded">
-        <h2 className="text-xl font-semibold mb-4 text-center">
-          {isRegistering ? "Create Account" : "Sign In"}
-        </h2>
-
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full border p-2 mb-2 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full border p-2 mb-4 rounded"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button
-          onClick={handleEmailAuth}
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded mb-2"
-        >
-          {isRegistering ? "Sign Up with Email" : "Login with Email"}
-        </button>
-
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={loading}
-          className="w-full border py-2 rounded"
-        >
-          Continue with Google
-        </button>
-
-        <p className="text-sm mt-4 text-center">
-          {isRegistering ? "Already have an account?" : "Need an account?"}{" "}
-          <button
-            onClick={() => setIsRegistering(!isRegistering)}
-            className="text-blue-600 underline"
-          >
-            {isRegistering ? "Sign In" : "Sign Up"}
-          </button>
-        </p>
-      </div>
+      <Card className="w-full max-w-sm md:max-w-md lg:max-w-lg">
+        <CardHeader>
+          <CardTitle>
+            {mode === "signup" ? "Create Account" : "Sign In"}
+          </CardTitle>
+          <CardDescription>
+            {mode === "signup"
+              ? "Enter your email to create your account"
+              : "Enter your email to login to your account"}
+          </CardDescription>
+          <CardAction>
+            <Button
+              variant="link"
+              onClick={() =>
+                form.setValue("mode", mode === "login" ? "signup" : "login")
+              }
+            >
+              {mode === "login" ? "Sign In" : "Sign Up"}
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <CardContent>
+            <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register("email", { required: true })}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-500">
+                    {errors.password?.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                {/* <Link to={"#"} className="ml-auto inline-block text-sm underline-offset-4 hover:underline">Forgot your password?</Link> */}
+                <Input
+                  id="password"
+                  type="password"
+                  {...register("password", { required: true })}
+                />
+                {errors.password && (
+                  <p className="text-sm text-red-600">
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+              {mode === "signup" && (
+                <div className="grid gap-2">
+                  <Label>Confirm Password</Label>
+                  <Input type="password" {...register("confirmPassword")} />
+                  {errors.confirmPassword && (
+                    <p className="text-sm text-red-600">
+                      {errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
+              )}
+              {/* {mode === "signup" && (
+                <div className="grid gap-2">
+                  <Label htmlFor="displayName">Display Name</Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    {...register("displayName")}
+                  />
+                </div>
+              )} */}
+            </div>
+            <div className="text-right py-3">
+              {mode === "login" && (
+                <Link
+                  to="/rest-password"
+                  className="text-sm underline-offset-4 hover:underline inline-block"
+                >
+                  Forgot password?
+                </Link>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button className="w-full" type="submit" disabled={loading}>
+              {mode === "signup" ? "Sign Up" : "Login"}
+            </Button>
+            <Button
+              className="w-full"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              type="button"
+            >
+              Continue with Google
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   )
 }

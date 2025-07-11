@@ -10,6 +10,7 @@ import VendorList from "@/components/VendorList"
 const Dashboard = () => {
   const [user] = useAuthState(auth)
   const [profile, setProfile] = useState<ProfileType | null>(null)
+  console.log("🚀 ~ Dashboard ~ profile:", profile)
   const [businessName, setBusinessName] = useState<string | null>(null)
 
   useEffect(() => {
@@ -45,6 +46,14 @@ const Dashboard = () => {
 
         {profile && (
           <div>
+            {businessName ? (
+              <p className="mt-2">
+                Business Name: <strong>{businessName}</strong>
+              </p>
+            ) : (
+              <p className="mt-2 text-gray-500">Loading business name...</p>
+            )}
+
             {profile.role === null && (
               <p className="text-yellow-600">
                 You haven't registered a business yet.
@@ -56,18 +65,6 @@ const Dashboard = () => {
             {profile.role === "vendor" && (
               <p>You are a vendor for this business.</p>
             )}
-
-            {businessName ? (
-              <p className="mt-2">
-                Business Name: <strong>{businessName}</strong>
-              </p>
-            ) : (
-              <p className="mt-2 text-gray-500">Loading business name...</p>
-            )}
-
-            <p className="text-sm text-gray-600">
-              Business ID: {profile.businessId ?? "Not assigned"}
-            </p>
           </div>
         )}
 
