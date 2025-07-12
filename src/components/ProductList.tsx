@@ -1,7 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { collection, onSnapshot, updateDoc, doc } from "firebase/firestore"
+import {
+  collection,
+  onSnapshot,
+  updateDoc,
+  doc,
+  deleteDoc,
+} from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { ProductType } from "@/lib/types"
 import { Input } from "@/components/ui/input"
@@ -17,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog"
+import { toast } from "sonner"
 
 export default function ProductList({
   businessId,
@@ -29,8 +36,10 @@ export default function ProductList({
   const [editing, setEditing] = useState<{
     [key: string]: Partial<ProductType>
   }>({})
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!businessId) return
@@ -55,6 +64,16 @@ export default function ProductList({
 
     await updateDoc(doc(db, "businesses", businessId, "products", id), changes)
     setEditing((prev) => ({ ...prev, [id]: {} }))
+    toast.success("Changes Saved!")
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "businesses", businessId, "products", id))
+    } catch (error) {
+      console.error("~ Delete error:", error)
+      toast.error("delete failed.")
+    }
   }
 
   return (
@@ -127,10 +146,19 @@ export default function ProductList({
                     variant="outline"
                     onClick={() => {
                       setPendingSaveId(product.uid)
-                      setDialogOpen(true)
+                      setEditDialogOpen(true)
                     }}
                   >
                     Save
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setPendingDeleteId(product.uid)
+                      setDeleteDialogOpen(true)
+                    }}
+                  >
+                    Delete
                   </Button>
                 </CardFooter>
               </Card>
@@ -151,7 +179,7 @@ export default function ProductList({
           )}
         </div>
       ))}
-      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <AlertDialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Save Changes?</AlertDialogTitle>
@@ -165,8 +193,33 @@ export default function ProductList({
               onClick={async () => {
                 if (pendingSaveId) {
                   await handleEdit(pendingSaveId)
-                  setDialogOpen(false)
+                  setEditDialogOpen(false)
                   setPendingSaveId(null)
+                }
+              }}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this product?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (pendingDeleteId) {
+                  await handleDelete(pendingDeleteId)
+                  setDeleteDialogOpen(false)
+                  setPendingDeleteId(null)
                 }
               }}
             >
