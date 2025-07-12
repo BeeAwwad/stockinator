@@ -6,6 +6,7 @@ import Layout from "@/components/Layout"
 import type { ProfileType } from "@/lib/types"
 import AddVendor from "@/components/AddVendor"
 import VendorList from "@/components/VendorList"
+import { Link } from "react-router-dom"
 
 const Dashboard = () => {
   const [user] = useAuthState(auth)
@@ -41,14 +42,15 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="p-6">
+      <div className="py-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
 
         {profile && (
-          <div>
+          <div className="space-y-1">
             {businessName ? (
               <p className="mt-2">
-                Business Name: <strong>{businessName}</strong>
+                Business Name:{" "}
+                <span className="font-semibold">{businessName}</span>
               </p>
             ) : (
               <p className="mt-2 text-gray-500">Loading business name...</p>
@@ -56,14 +58,27 @@ const Dashboard = () => {
 
             {profile.role === null && (
               <p className="text-yellow-600">
-                You haven't registered a business yet.
+                Create a business first.
+                <Link to="/create-business" className="hover:underline">
+                  Create Business
+                </Link>
               </p>
             )}
             {profile.role === "owner" && (
-              <p>You're the owner of this business.</p>
+              <>
+                <p>
+                  Email: <span className="font-semibold">{profile.email}</span>
+                </p>
+                <p>You are the owner of this business.</p>
+              </>
             )}
             {profile.role === "vendor" && (
-              <p>You are a vendor for this business.</p>
+              <>
+                <p>
+                  Email: <span className="font-semibold">{profile.email}</span>
+                </p>
+                <p>You are a vendor for this business.</p>
+              </>
             )}
           </div>
         )}

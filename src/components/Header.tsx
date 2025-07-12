@@ -3,6 +3,7 @@ import { useAuthState } from "react-firebase-hooks/auth"
 import { auth, db } from "../lib/firebase"
 import { useEffect, useState } from "react"
 import { doc, getDoc } from "firebase/firestore"
+import { Button } from "./ui/button"
 
 const Header = () => {
   const [user] = useAuthState(auth)
@@ -33,7 +34,7 @@ const Header = () => {
   if (!user) return null
 
   return (
-    <nav className="bg-gray-800 text-white px-4 py-3 flex items-center justify-between">
+    <nav className="bg-gray-800 text-white px-4 py-3 flex items-center justify-between text-xs md:text-sm">
       <div className="space-x-4">
         {hasBusiness && (
           <>
@@ -55,12 +56,12 @@ const Header = () => {
         )}
       </div>
       <div>
-        <button
+        <Button
           onClick={logout}
-          className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+          className="bg-rose-500 px-3 py-1 hover:bg-rose-600"
         >
           Sign Out
-        </button>
+        </Button>
       </div>
     </nav>
   )

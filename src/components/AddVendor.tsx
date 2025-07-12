@@ -13,6 +13,16 @@ import { db, auth } from "../lib/firebase"
 import { useAuthState } from "react-firebase-hooks/auth"
 import { toast } from "sonner"
 import { nanoid } from "nanoid"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card"
+import { Input } from "./ui/input"
+import { Button } from "./ui/button"
 
 const AddVendor = () => {
   const [user] = useAuthState(auth)
@@ -85,27 +95,30 @@ const AddVendor = () => {
   if (!businessId) return null
 
   return (
-    <div className="border p-4 mt-6 rounded bg-gray-50">
-      <h3 className="text-lg font-semibold mb-2">Add Vendor</h3>
-      <p className="text-sm text-gray-600 mb-4">
-        Vendors invited: {vendorCount}/2
-      </p>
-
-      <input
-        type="email"
-        placeholder="Vendor's email"
-        className="border p-2 w-full rounded mb-2"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <button
-        onClick={handleAddVendor}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        disabled={!email || vendorCount >= 2}
-      >
-        Add Vendor
-      </button>
+    <div className="flex items-center">
+      <Card className="w-full max-w-sm md:max-w-lg lg:max-w-xl">
+        <CardHeader>
+          <CardTitle>Add Vendor</CardTitle>
+          <CardDescription>Vondors invited: {vendorCount}/2</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Vendor's email"
+          />
+        </CardContent>
+        <CardFooter>
+          <Button
+            className="w-full"
+            onClick={handleAddVendor}
+            disabled={!email || vendorCount >= 2}
+          >
+            Add Vendor
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

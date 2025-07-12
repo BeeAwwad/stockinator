@@ -1,0 +1,180 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { collection, onSnapshot, updateDoc, doc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import type { ProductType } from "@/lib/types"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog"
+
+export default function ProductList({
+  businessId,
+  isOwner,
+}: {
+  businessId: string
+  isOwner: boolean
+}) {
+  const [products, setProducts] = useState<ProductType[]>([])
+  const [editing, setEditing] = useState<{
+    [key: string]: Partial<ProductType>
+  }>({})
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [pendingSaveId, setPendingSaveId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!businessId) return
+
+    const unsubscribe = onSnapshot(
+      collection(db, "businesses", businessId, "products"),
+      (snap) => {
+        const list = snap.docs.map((doc) => ({
+          uid: doc.id,
+          ...doc.data(),
+        })) as ProductType[]
+        setProducts(list)
+      }
+    )
+
+    return () => unsubscribe()
+  }, [businessId])
+
+  const handleEdit = async (id: string) => {
+    const changes = editing[id]
+    if (!changes) return
+
+    await updateDoc(doc(db, "businesses", businessId, "products", id), changes)
+    setEditing((prev) => ({ ...prev, [id]: {} }))
+  }
+
+  return (
+    <div className="grid gap-4 mt-8 w-full max-w-lg md:max-w-xl lg:max-w-2xl">
+      {products.map((product) => (
+        <div key={product.uid} className="">
+          {isOwner ? (
+            <>
+              <Card>
+                <CardHeader>
+                  <p className="text-gray-600 text-end text-xs">
+                    SKU: {product.sku}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-2.5">
+                  <Input
+                    defaultValue={product.name}
+                    onChange={(e) =>
+                      setEditing((prev) => ({
+                        ...prev,
+                        [product.uid]: {
+                          ...prev[product.uid],
+                          name: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                  {/* <Input
+                className="mb-1"
+                defaultValue={product.sku}
+                onChange={(e) =>
+                setEditing((prev) => ({
+                    ...prev,
+                    [product.uid]: {
+                        ...prev[product.uid],
+                      sku: e.target.value,
+                    },
+                  }))
+                }
+              /> */}
+                  <Input
+                    defaultValue={product.price}
+                    type="number"
+                    onChange={(e) =>
+                      setEditing((prev) => ({
+                        ...prev,
+                        [product.uid]: {
+                          ...prev[product.uid],
+                          price: Number(e.target.value),
+                        },
+                      }))
+                    }
+                  />
+                  <Input
+                    defaultValue={product.stock}
+                    type="number"
+                    onChange={(e) =>
+                      setEditing((prev) => ({
+                        ...prev,
+                        [product.uid]: {
+                          ...prev[product.uid],
+                          stock: Number(e.target.value),
+                        },
+                      }))
+                    }
+                  />
+                </CardContent>
+                <CardFooter className="justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setPendingSaveId(product.uid)
+                      setDialogOpen(true)
+                    }}
+                  >
+                    Save
+                  </Button>
+                </CardFooter>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-semibold text-lg">
+                  {product.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                <p>₦{product.price}</p>
+                <p>Stock: {product.stock}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ))}
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save Changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to save changes to this product?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (pendingSaveId) {
+                  await handleEdit(pendingSaveId)
+                  setDialogOpen(false)
+                  setPendingSaveId(null)
+                }
+              }}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}

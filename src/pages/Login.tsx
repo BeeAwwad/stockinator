@@ -3,6 +3,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  // updateProfile,
 } from "firebase/auth"
 import { auth, db } from "../lib/firebase"
 import {
@@ -181,7 +182,7 @@ const Login = () => {
                 form.setValue("mode", mode === "login" ? "signup" : "login")
               }
             >
-              {mode === "login" ? "Sign In" : "Sign Up"}
+              {mode === "login" ? "Sign Up" : "Sign In"}
             </Button>
           </CardAction>
         </CardHeader>
@@ -201,6 +202,16 @@ const Login = () => {
                   </p>
                 )}
               </div>
+              {/* {mode === "signup" && (
+                <div className="grid gap-2">
+                  <Label htmlFor="displayName">User Name</Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    {...register("displayName")}
+                  />
+                </div>
+              )} */}
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
                 {/* <Link to={"#"} className="ml-auto inline-block text-sm underline-offset-4 hover:underline">Forgot your password?</Link> */}
@@ -226,16 +237,6 @@ const Login = () => {
                   )}
                 </div>
               )}
-              {/* {mode === "signup" && (
-                <div className="grid gap-2">
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    type="text"
-                    {...register("displayName")}
-                  />
-                </div>
-              )} */}
             </div>
             <div className="text-right py-3">
               {mode === "login" && (
