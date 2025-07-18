@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore"
 import { db, auth } from "../lib/firebase"
 import { useEffect, useState } from "react"
-import type { ProfileType } from "@/lib/types"
+import type { ProfileProps } from "@/lib/types"
 import { toast } from "sonner"
 import {
   AlertDialog,
@@ -26,7 +26,7 @@ import { Button } from "./ui/button"
 
 const VendorList = () => {
   const [user] = useAuthState(auth)
-  const [vendors, setVendors] = useState<ProfileType[]>([])
+  const [vendors, setVendors] = useState<ProfileProps[]>([])
   const [invites, setInvites] = useState<{ id: string; email: string }[]>([])
   const [isOwner, setIsOwner] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(null)
@@ -64,7 +64,7 @@ const VendorList = () => {
         const list = snap.docs.map((doc) => ({
           uid: doc.id,
           ...doc.data(),
-        })) as ProfileType[]
+        })) as ProfileProps[]
         setVendors(list)
       })
 

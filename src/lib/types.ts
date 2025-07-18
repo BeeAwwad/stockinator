@@ -1,4 +1,4 @@
-export type ProfileType = {
+export type ProfileProps = {
   uid: string
   businessId: string
   role: "owner" | "vendor" | "pending"
@@ -7,7 +7,7 @@ export type ProfileType = {
   displayName?: string
   createdAt: Date
 }
-export type ProductType = {
+export type ProductProps = {
   uid: string
   name: string
   sku: string
@@ -16,8 +16,17 @@ export type ProductType = {
   createdAt: Date
 }
 
+export type TransactionProps = {
+  productId: string
+  quantity: number
+  total: number
+  createdBy: string
+  createdAt: Date
+}
+
 export type Transaction = {
   uid: string
+  productId: string
   quantity: number
   total: number
   createdBy: string

@@ -31,11 +31,15 @@ export default function TransactionList({
   isOwner: boolean
 }) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  console.log("🚀 ~ transactions:", transactions)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!businessId) return
+    if (!businessId) {
+      toast.error("You're not allowed to delete this tranasaction.")
+      return
+    }
     const q = query(
       collection(db, "businesses", businessId, "transactions"),
       orderBy("createdAt", "desc")
@@ -51,14 +55,14 @@ export default function TransactionList({
     return () => unsubscribe()
   }, [businessId])
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, "businesses", businessId, "transactions", id))
-      toast.success("Transaction removed.")
-    } catch (error) {
-      console.error("~ Delete error:", error)
-      toast.error("delete failed.")
-    }
+  const handleDelete = async (transactionId: string) => {
+    if (!isOwner) return
+    deleteDoc(doc(db, "businesses", businessId, "transactions", transactionId))
+      .then(() => toast.success("Transaction deleted"))
+      .catch((err) => {
+        console.error(err)
+        toast.error("Failed to delete transaction")
+      })
   }
 
   return (
@@ -69,7 +73,13 @@ export default function TransactionList({
             key={`${tx.uid} ~ ${i}`}
             className="border p-6 rounded-lg space-y-2.5 shadow-sm"
           >
-            <p>{tx.quantity} units</p>
+            <p>
+              {tx.quantity} units —{" "}
+              <span className="font-medium">
+                Total: ₦{tx.total?.toLocaleString()}
+              </span>
+            </p>
+
             <p className="text-xs text-gray-500">
               Added by: {tx.createdBy || "Unknown"}
             </p>
@@ -93,9 +103,9 @@ export default function TransactionList({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Transaction?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this product?
+              Are you sure you want to delete this transaction?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

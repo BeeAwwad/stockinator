@@ -5,20 +5,20 @@ import { doc, getDoc } from "firebase/firestore"
 import { useEffect, useState } from "react"
 import { auth, db } from "@/lib/firebase"
 import Layout from "@/components/Layout"
-import type { ProfileType } from "@/lib/types"
+import type { ProfileProps } from "@/lib/types"
 import AddProduct from "@/components/AddProduct"
 import ProductList from "@/components/ProductList"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
 export default function ProductsPage() {
   const [user] = useAuthState(auth)
-  const [profile, setProfile] = useState<ProfileType | null>(null)
+  const [profile, setProfile] = useState<ProfileProps | null>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return
       const snap = await getDoc(doc(db, "profiles", user.uid))
-      const data = snap.data() as ProfileType
+      const data = snap.data() as ProfileProps
       setProfile(data)
     }
 

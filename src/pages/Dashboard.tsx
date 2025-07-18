@@ -3,7 +3,7 @@ import { auth, db } from "../lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
 import { useEffect, useState } from "react"
 import Layout from "@/components/Layout"
-import type { ProfileType } from "@/lib/types"
+import type { ProfileProps } from "@/lib/types"
 import AddVendor from "@/components/AddVendor"
 import VendorList from "@/components/VendorList"
 import { Link, useNavigate } from "react-router-dom"
@@ -21,7 +21,7 @@ import {
 
 const Dashboard = () => {
   const [user] = useAuthState(auth)
-  const [profile, setProfile] = useState<ProfileType | null>(null)
+  const [profile, setProfile] = useState<ProfileProps | null>(null)
   console.log("🚀 ~ Dashboard ~ profile:", profile)
   const [businessName, setBusinessName] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -36,7 +36,7 @@ const Dashboard = () => {
 
         if (!profileSnap.exists()) return
 
-        const profileData = profileSnap.data() as ProfileType
+        const profileData = profileSnap.data() as ProfileProps
         setProfile(profileData)
 
         if (profileData.businessId) {

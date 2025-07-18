@@ -12,20 +12,20 @@ import { auth, db } from "@/lib/firebase"
 import Layout from "@/components/Layout"
 import TransactionForm from "@/components/TransactionForm"
 import TransactionList from "@/components/TransactionList"
-import type { ProductType, ProfileType, Transaction } from "@/lib/types"
+import type { ProductProps, ProfileProps, TransactionProps } from "@/lib/types"
 import { toast } from "sonner"
 
 export default function Transaction() {
   const [user] = useAuthState(auth)
-  const [profile, setProfile] = useState<ProfileType | null>(null)
-  const [products, setProducts] = useState<ProductType[]>([])
+  const [profile, setProfile] = useState<ProfileProps | null>(null)
+  const [products, setProducts] = useState<ProductProps[]>([])
 
   const fetchData = async () => {
     if (!user) return
 
     const profileSnap = await getDoc(doc(db, "profiles", user.uid))
     const profileData = profileSnap.data()
-    setProfile((profileData as ProfileType) ?? null)
+    setProfile((profileData as ProfileProps) ?? null)
 
     if (profileData?.businessId) {
       const productsSnap = await getDocs(
@@ -35,23 +35,23 @@ export default function Transaction() {
         productsSnap.docs.map((doc) => ({
           uid: doc.id,
           ...doc.data(),
-        })) as ProductType[]
+        })) as ProductProps[]
       )
     }
   }
 
-  const createTransaction = async (data: Transaction) => {
+  const createTransaction = async (data: TransactionProps) => {
     try {
-      const { uid, quantity, total } = data
+      const { productId, quantity, total } = data
       const qty = Number(quantity)
-      if (!profile?.businessId || !uid || !qty) return
+      if (!profile?.businessId || !productId || !qty) return
 
       const productRef = doc(
         db,
         "businesses",
         profile.businessId,
         "products",
-        uid
+        productId
       )
 
       const transactionsRef = collection(
@@ -80,7 +80,7 @@ export default function Transaction() {
         )
         const newTransactionRef = doc(transactionsRef)
         tx.set(newTransactionRef, {
-          uid,
+          productId,
           quantity: qty,
           total,
           createdBy: user?.email ?? "unknown",
@@ -98,7 +98,7 @@ export default function Transaction() {
     fetchData()
   }, [user])
 
-  if (!profile) return <p>Loading...</p>
+  if (!profile) return <p>You're not logged in</p>
 
   return (
     <Layout>
