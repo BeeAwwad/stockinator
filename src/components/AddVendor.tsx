@@ -98,7 +98,7 @@ const AddVendor = () => {
     <div className="flex items-center">
       <Card className="w-full max-w-sm md:max-w-lg lg:max-w-xl">
         <CardHeader>
-          <CardTitle>Add Vendor</CardTitle>
+          <CardTitle>Invite Vendor</CardTitle>
           <CardDescription>Vondors invited: {vendorCount}/2</CardDescription>
         </CardHeader>
         <CardContent>

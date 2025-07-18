@@ -7,7 +7,6 @@ import { Button } from "./ui/button"
 
 const Header = () => {
   const [user] = useAuthState(auth)
-  const [role, setRole] = useState<string | null>(null)
   const [hasBusiness, setHasBusiness] = useState<boolean>(false)
   const navigate = useNavigate()
 
@@ -19,7 +18,6 @@ const Header = () => {
       const profileData = profileSnap.data()
 
       if (profileData) {
-        setRole(profileData.role)
         setHasBusiness(!!profileData.businessId)
       }
     }
@@ -31,16 +29,14 @@ const Header = () => {
     navigate("/login")
   }
 
-  if (!user) return null
-
   return (
-    <nav className="bg-gray-800 text-white px-4 py-3 flex items-center justify-between text-xs md:text-sm">
+    <nav className="bg-gray-800 text-white h-14 px-4 py-3 flex items-center justify-between text-xs md:text-sm">
       <div className="space-x-4">
+        <Link to="/" className="hover:underline">
+          Stockinator
+        </Link>
         {hasBusiness && (
           <>
-            <Link to="/" className="hover:underline">
-              Stockinator
-            </Link>
             <Link to="/products" className="hover:underline">
               Products
             </Link>
@@ -49,20 +45,24 @@ const Header = () => {
             </Link>
           </>
         )}
-        {!hasBusiness && (
+        {hasBusiness || !user ? (
+          <></>
+        ) : (
           <Link to="/create-business" className="hover:underline">
             Create Business
           </Link>
         )}
       </div>
-      <div>
-        <Button
-          onClick={logout}
-          className="bg-rose-500 px-3 py-1 hover:bg-rose-600"
-        >
-          Sign Out
-        </Button>
-      </div>
+      {user && (
+        <div>
+          <Button
+            onClick={logout}
+            className="bg-rose-500 px-3 py-1 hover:bg-rose-600"
+          >
+            Sign Out
+          </Button>
+        </div>
+      )}
     </nav>
   )
 }

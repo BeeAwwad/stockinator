@@ -1,29 +1,24 @@
-import {
-  addDoc,
-  collection,
-  getDoc,
-  getDocs,
-  //   query,
-  serverTimestamp,
-  //   where,
-} from "firebase/firestore"
-import { auth, db } from "../lib/firebase"
 import { useAuthState } from "react-firebase-hooks/auth"
 import { useEffect, useState } from "react"
-import { doc } from "firebase/firestore"
+import {
+  getDoc,
+  collection,
+  getDocs,
+  doc,
+  runTransaction,
+  // addDoc,
+} from "firebase/firestore"
+import { auth, db } from "@/lib/firebase"
 import Layout from "@/components/Layout"
-import type { ProductType, ProfileType } from "@/lib/types"
+import TransactionForm from "@/components/TransactionForm"
+import TransactionList from "@/components/TransactionList"
+import type { ProductType, ProfileType, Transaction } from "@/lib/types"
+import { toast } from "sonner"
 
-const Transaction = () => {
+export default function Transaction() {
   const [user] = useAuthState(auth)
   const [profile, setProfile] = useState<ProfileType | null>(null)
   const [products, setProducts] = useState<ProductType[]>([])
-  const [form, setForm] = useState({
-    productId: "",
-    quantity: "",
-    type: "OUT",
-    notes: "",
-  })
 
   const fetchData = async () => {
     if (!user) return
@@ -37,32 +32,66 @@ const Transaction = () => {
         collection(db, "businesses", profileData.businessId, "products")
       )
       setProducts(
-        productsSnap.docs.map(
-          (doc) => ({ uid: doc.id, ...doc.data() } as ProductType)
-        )
+        productsSnap.docs.map((doc) => ({
+          uid: doc.id,
+          ...doc.data(),
+        })) as ProductType[]
       )
     }
   }
 
-  const createTransaction = async () => {
-    const { productId, quantity, type, notes } = form
-    if (!profile?.businessId) return
+  const createTransaction = async (data: Transaction) => {
+    try {
+      const { uid, quantity, total } = data
+      const qty = Number(quantity)
+      if (!profile?.businessId || !uid || !qty) return
 
-    const transactionsRef = collection(
-      db,
-      "businesses",
-      profile.businessId,
-      "transactions"
-    )
-    await addDoc(transactionsRef, {
-      productId,
-      type,
-      quantity: Number(quantity),
-      notes,
-      createdAt: serverTimestamp(),
-    })
+      const productRef = doc(
+        db,
+        "businesses",
+        profile.businessId,
+        "products",
+        uid
+      )
 
-    setForm({ productId: "", quantity: "", type: "OUT", notes: "" })
+      const transactionsRef = collection(
+        db,
+        "businesses",
+        profile.businessId,
+        "transactions"
+      )
+
+      await runTransaction(db, async (tx) => {
+        const productSnap = await tx.get(productRef)
+        if (!productSnap.exists()) throw new Error("Product not found")
+
+        const stock = productSnap.data().stock || 0
+        const newStock = stock - qty
+
+        if (newStock < 0) {
+          toast.error("Insufficient stock")
+          throw new Error("Insufficient stock")
+        }
+
+        tx.set(
+          productRef,
+          { stock: newStock, updatedBy: user?.email ?? "unknown" },
+          { mergeFields: ["stock", "updatedBy"] }
+        )
+        const newTransactionRef = doc(transactionsRef)
+        tx.set(newTransactionRef, {
+          uid,
+          quantity: qty,
+          total,
+          createdBy: user?.email ?? "unknown",
+          createdAt: new Date(),
+        })
+      })
+      toast.success("Transaction created")
+    } catch (error) {
+      console.error("Failed to create transaction:", error)
+      toast.error("An error occurred while processing the transaction.")
+    }
   }
 
   useEffect(() => {
@@ -73,57 +102,13 @@ const Transaction = () => {
 
   return (
     <Layout>
-      <div className="p-6">
-        <h1 className="text-xl font-bold mb-4">Create Transaction</h1>
-
-        <select
-          className="border p-2 rounded w-full mb-2"
-          value={form.productId}
-          onChange={(e) => setForm({ ...form, productId: e.target.value })}
-        >
-          <option value="">Select Product</option>
-          {products.map((product) => (
-            <option key={product.uid} value={product.uid}>
-              {product.name} (Stock: {product.stock})
-            </option>
-          ))}
-        </select>
-
-        {profile.role === "owner" && (
-          <select
-            className="border p-2 rounded w-full mb-2"
-            value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
-          >
-            <option value="IN">Stock In</option>
-            <option value="OUT">Stock Out</option>
-          </select>
-        )}
-
-        {profile.role === "vendor" && <input type="hidden" value="OUT" />}
-
-        <input
-          placeholder="Quantity"
-          type="number"
-          className="border p-2 rounded w-full mb-2"
-          value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+      <div className="py-6 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl w-full mx-auto">
+        <TransactionForm products={products} onSubmit={createTransaction} />
+        <TransactionList
+          businessId={profile.businessId}
+          isOwner={profile.role === "owner"}
         />
-        <input
-          placeholder="Notes"
-          className="border p-2 rounded w-full mb-4"
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-        />
-        <button
-          onClick={createTransaction}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          Submit
-        </button>
       </div>
     </Layout>
   )
 }
-
-export default Transaction

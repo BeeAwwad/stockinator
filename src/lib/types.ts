@@ -16,11 +16,10 @@ export type ProductType = {
   createdAt: Date
 }
 
-export type TransactionType = {
+export type Transaction = {
   uid: string
-  productId: string
   quantity: number
-  type: string
-  notes: string
+  total: number
+  createdBy: string
   createdAt: Date
 }

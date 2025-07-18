@@ -165,14 +165,14 @@ export default function ProductList({
             </>
           ) : (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex justify-between">
                 <CardTitle className="font-semibold text-lg">
                   {product.name}
                 </CardTitle>
-              </CardHeader>
-              <CardContent>
                 <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                <p>₦{product.price}</p>
+              </CardHeader>
+              <CardContent className="space-y-2.5">
+                <p>Price: ₦{product.price}</p>
                 <p>Stock: {product.stock}</p>
               </CardContent>
             </Card>

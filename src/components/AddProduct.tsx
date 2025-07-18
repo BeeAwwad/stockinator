@@ -41,6 +41,7 @@ export default function AddProduct({ businessId }: { businessId: string }) {
     <div className="space-y-2">
       {["name", "price", "stock"].map((field) => (
         <Input
+          className="placeholder:text-sm"
           key={field}
           name={field}
           placeholder={field[0].toUpperCase() + field.slice(1)}
@@ -49,7 +50,7 @@ export default function AddProduct({ businessId }: { businessId: string }) {
           onChange={handleChange}
         />
       ))}
-      <Button onClick={handleSubmit} className="w-full">
+      <Button onClick={handleSubmit} className="w-full mt-3">
         Add Product
       </Button>
     </div>

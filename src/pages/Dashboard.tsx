@@ -6,13 +6,27 @@ import Layout from "@/components/Layout"
 import type { ProfileType } from "@/lib/types"
 import AddVendor from "@/components/AddVendor"
 import VendorList from "@/components/VendorList"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const Dashboard = () => {
   const [user] = useAuthState(auth)
   const [profile, setProfile] = useState<ProfileType | null>(null)
   console.log("🚀 ~ Dashboard ~ profile:", profile)
   const [businessName, setBusinessName] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [businessId, setBusinessId] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (user) {
@@ -39,6 +53,12 @@ const Dashboard = () => {
       loadProfileAndBusiness()
     }
   }, [user])
+
+  const handleDelete = (id: string) => {
+    console.log("Bussiness Deleted!", id)
+    navigate("/register-business")
+    navigate(profile?.role === "owner" ? "/register-business" : "/login")
+  }
 
   return (
     <Layout>
@@ -67,7 +87,8 @@ const Dashboard = () => {
             {profile.role === "owner" && (
               <>
                 <p>
-                  Email: <span className="font-semibold">{profile.email}</span>
+                  User:{" "}
+                  <span className="font-semibold">{profile.displayName}</span>
                 </p>
                 <p>You are the owner of this business.</p>
               </>
@@ -75,24 +96,53 @@ const Dashboard = () => {
             {profile.role === "vendor" && (
               <>
                 <p>
-                  Email: <span className="font-semibold">{profile.email}</span>
+                  User:{" "}
+                  <span className="font-semibold">{profile.displayName}</span>
                 </p>
                 <p>You are a vendor for this business.</p>
               </>
             )}
           </div>
         )}
-
-        <button
-          className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
-          onClick={() => auth.signOut()}
-        >
-          Sign Out
-        </button>
+        {profile?.role === "owner" && (
+          <Button
+            className="mt-4 bg-rose-500"
+            onClick={() => {
+              setBusinessId(profile.businessId)
+              setDeleteDialogOpen(true)
+            }}
+          >
+            Delete Business
+          </Button>
+        )}
       </div>
 
       <AddVendor />
       <VendorList />
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this product?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (businessId) {
+                  await handleDelete(businessId)
+                  setDeleteDialogOpen(false)
+                  setBusinessId(null)
+                }
+              }}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   )
 }

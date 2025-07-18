@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import Layout from "@/components/Layout"
 
 const loginSchema = z
   .object({
@@ -121,7 +122,9 @@ const Login = () => {
       }
 
       // Navigate
-      navigate(role === "owner" || role === "vendor" ? "/" : "/register")
+      navigate(
+        role === "owner" || role === "vendor" ? "/" : "/register-business"
+      )
     } catch (err) {
       console.error("Auth error:", err)
       toast.error("Login failed. Check console for details.")
@@ -164,45 +167,46 @@ const Login = () => {
   }
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <Card className="w-full max-w-sm md:max-w-md lg:max-w-lg">
-        <CardHeader>
-          <CardTitle>
-            {mode === "signup" ? "Create Account" : "Sign In"}
-          </CardTitle>
-          <CardDescription>
-            {mode === "signup"
-              ? "Enter your email to create your account"
-              : "Enter your email to login to your account"}
-          </CardDescription>
-          <CardAction>
-            <Button
-              variant="link"
-              onClick={() =>
-                form.setValue("mode", mode === "login" ? "signup" : "login")
-              }
-            >
-              {mode === "login" ? "Sign Up" : "Sign In"}
-            </Button>
-          </CardAction>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email", { required: true })}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">
-                    {errors.password?.message}
-                  </p>
-                )}
-              </div>
-              {/* {mode === "signup" && (
+    <Layout>
+      <div className="flex items-center justify-center mt-8">
+        <Card className="w-full py-6 max-w-sm md:max-w-md lg:max-w-lg">
+          <CardHeader>
+            <CardTitle>
+              {mode === "signup" ? "Create Account" : "Sign In"}
+            </CardTitle>
+            <CardDescription>
+              {mode === "signup"
+                ? "Enter your email to create your account"
+                : "Enter your email to login to your account"}
+            </CardDescription>
+            <CardAction>
+              <Button
+                variant="link"
+                onClick={() =>
+                  form.setValue("mode", mode === "login" ? "signup" : "login")
+                }
+              >
+                {mode === "login" ? "Sign Up" : "Sign In"}
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register("email", { required: true })}
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-red-500">
+                      {errors.password?.message}
+                    </p>
+                  )}
+                </div>
+                {/* {mode === "signup" && (
                 <div className="grid gap-2">
                   <Label htmlFor="displayName">User Name</Label>
                   <Input
@@ -212,59 +216,60 @@ const Login = () => {
                   />
                 </div>
               )} */}
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                {/* <Link to={"#"} className="ml-auto inline-block text-sm underline-offset-4 hover:underline">Forgot your password?</Link> */}
-                <Input
-                  id="password"
-                  type="password"
-                  {...register("password", { required: true })}
-                />
-                {errors.password && (
-                  <p className="text-sm text-red-600">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-              {mode === "signup" && (
                 <div className="grid gap-2">
-                  <Label>Confirm Password</Label>
-                  <Input type="password" {...register("confirmPassword")} />
-                  {errors.confirmPassword && (
+                  <Label htmlFor="password">Password</Label>
+                  {/* <Link to={"#"} className="ml-auto inline-block text-sm underline-offset-4 hover:underline">Forgot your password?</Link> */}
+                  <Input
+                    id="password"
+                    type="password"
+                    {...register("password", { required: true })}
+                  />
+                  {errors.password && (
                     <p className="text-sm text-red-600">
-                      {errors.confirmPassword.message}
+                      {errors.password.message}
                     </p>
                   )}
                 </div>
-              )}
-            </div>
-            <div className="text-right py-3">
-              {mode === "login" && (
-                <Link
-                  to="/rest-password"
-                  className="text-sm underline-offset-4 hover:underline inline-block"
-                >
-                  Forgot password?
-                </Link>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" type="submit" disabled={loading}>
-              {mode === "signup" ? "Sign Up" : "Login"}
-            </Button>
-            <Button
-              className="w-full"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              type="button"
-            >
-              Continue with Google
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+                {mode === "signup" && (
+                  <div className="grid gap-2">
+                    <Label>Confirm Password</Label>
+                    <Input type="password" {...register("confirmPassword")} />
+                    {errors.confirmPassword && (
+                      <p className="text-sm text-red-600">
+                        {errors.confirmPassword.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="text-right py-3">
+                {mode === "login" && (
+                  <Link
+                    to="/rest-password"
+                    className="text-sm underline-offset-4 hover:underline inline-block"
+                  >
+                    Forgot password?
+                  </Link>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Button className="w-full" type="submit" disabled={loading}>
+                {mode === "signup" ? "Sign Up" : "Login"}
+              </Button>
+              <Button
+                className="w-full"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                type="button"
+              >
+                Continue with Google
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
+    </Layout>
   )
 }
 
