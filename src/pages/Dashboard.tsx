@@ -22,7 +22,6 @@ import {
 const Dashboard = () => {
   const [user] = useAuthState(auth)
   const [profile, setProfile] = useState<ProfileProps | null>(null)
-  console.log("🚀 ~ Dashboard ~ profile:", profile)
   const [businessName, setBusinessName] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(null)

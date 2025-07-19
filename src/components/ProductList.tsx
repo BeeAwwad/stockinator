@@ -33,7 +33,6 @@ export default function ProductList({
   isOwner: boolean
 }) {
   const [products, setProducts] = useState<ProductProps[]>([])
-  console.log("🚀 ~ products:", products)
   const [editing, setEditing] = useState<{
     [key: string]: Partial<ProductProps>
   }>({})
@@ -41,6 +40,7 @@ export default function ProductList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
 
   useEffect(() => {
     if (!businessId) return
@@ -66,6 +66,7 @@ export default function ProductList({
     await updateDoc(doc(db, "businesses", businessId, "products", id), changes)
     setEditing((prev) => ({ ...prev, [id]: {} }))
     toast.success("Changes Saved!")
+    setIsEditing(false)
   }
 
   const handleDelete = async (id: string) => {
@@ -95,77 +96,105 @@ export default function ProductList({
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-2.5">
-                    <Input
-                      defaultValue={product.name}
-                      onChange={(e) =>
-                        setEditing((prev) => ({
-                          ...prev,
-                          [product.uid]: {
-                            ...prev[product.uid],
-                            name: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    {/* <Input
-                className="mb-1"
-                defaultValue={product.sku}
-                onChange={(e) =>
-                setEditing((prev) => ({
-                  ...prev,
-                  [product.uid]: {
-                    ...prev[product.uid],
-                      sku: e.target.value,
-                    },
-                  }))
-                }
-              /> */}
-                    <Input
-                      defaultValue={product.price}
-                      type="number"
-                      onChange={(e) =>
-                        setEditing((prev) => ({
-                          ...prev,
-                          [product.uid]: {
-                            ...prev[product.uid],
-                            price: Number(e.target.value),
-                          },
-                        }))
-                      }
-                    />
-                    <Input
-                      defaultValue={product.stock}
-                      type="number"
-                      onChange={(e) =>
-                        setEditing((prev) => ({
-                          ...prev,
-                          [product.uid]: {
-                            ...prev[product.uid],
-                            stock: Number(e.target.value),
-                          },
-                        }))
-                      }
-                    />
+                    {isEditing ? (
+                      <>
+                        <Input
+                          className="text-sm"
+                          defaultValue={product.name}
+                          onChange={(e) =>
+                            setEditing((prev) => ({
+                              ...prev,
+                              [product.uid]: {
+                                ...prev[product.uid],
+                                name: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <Input
+                          className="text-sm"
+                          defaultValue={product.price}
+                          type="number"
+                          onChange={(e) =>
+                            setEditing((prev) => ({
+                              ...prev,
+                              [product.uid]: {
+                                ...prev[product.uid],
+                                price: Number(e.target.value),
+                              },
+                            }))
+                          }
+                        />
+                        <Input
+                          className="text-sm"
+                          defaultValue={product.stock}
+                          type="number"
+                          onChange={(e) =>
+                            setEditing((prev) => ({
+                              ...prev,
+                              [product.uid]: {
+                                ...prev[product.uid],
+                                stock: Number(e.target.value),
+                              },
+                            }))
+                          }
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm px-3 py-1.5 border rounded-sm">
+                          {product.name}
+                        </p>
+                        <p className="text-sm px-3 py-1.5 border rounded-sm">
+                          {product.price}
+                        </p>
+                        <p className="text-sm px-3 py-1.5 border rounded-sm">
+                          {product.stock}
+                        </p>
+                      </>
+                    )}
                   </CardContent>
                   <CardFooter className="justify-between">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setPendingSaveId(product.uid)
-                        setEditDialogOpen(true)
-                      }}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setPendingDeleteId(product.uid)
-                        setDeleteDialogOpen(true)
-                      }}
-                    >
-                      Delete
-                    </Button>
+                    {isEditing ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setPendingSaveId(product.uid)
+                          setEditDialogOpen(true)
+                        }}
+                      >
+                        Save
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditing(true)
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    )}
+                    {isEditing ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditing(false)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setPendingDeleteId(product.uid)
+                          setDeleteDialogOpen(true)
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </CardFooter>
                 </Card>
               </>
@@ -178,8 +207,10 @@ export default function ProductList({
                   <p className="text-sm text-gray-500">SKU: {product.sku}</p>
                 </CardHeader>
                 <CardContent className="space-y-2.5">
-                  <p>Price: ₦{product.price}</p>
-                  <p>Stock: {product.stock}</p>
+                  <p className="text-sm lg:text-base">
+                    Price: ₦{product.price}
+                  </p>
+                  <p className="text-sm lg:text-base">Stock: {product.stock}</p>
                 </CardContent>
               </Card>
             )}

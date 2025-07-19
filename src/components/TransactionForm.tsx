@@ -52,7 +52,7 @@ export default function TransactionForm({
     const product = products.find((p) => p.uid === data.productId)
     const total = product ? product.price * data.quantity : 0
 
-    await onSubmit({ ...data, total })
+    await onSubmit({ ...data, total, verified: false })
     setPrice("")
     setTotal("")
     reset()

@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore"
+
 export type ProfileProps = {
   uid: string
   businessId: string
@@ -22,6 +24,7 @@ export type TransactionProps = {
   total: number
   createdBy: string
   createdAt: Date
+  verified: boolean
 }
 
 export type Transaction = {
@@ -30,5 +33,8 @@ export type Transaction = {
   quantity: number
   total: number
   createdBy: string
-  createdAt: Date
+  createdAt: Timestamp
+  verified: boolean
+  verifiedAt?: Timestamp
+  verifiedBy?: string
 }

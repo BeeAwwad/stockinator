@@ -4,10 +4,12 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  updateDoc,
   orderBy,
   query,
+  Timestamp,
 } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
 import type { ProductProps, Transaction } from "@/lib/types"
@@ -22,6 +24,8 @@ import {
   AlertDialogTitle,
 } from "./ui/alert-dialog"
 import { toast } from "sonner"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import { useAuthState } from "react-firebase-hooks/auth"
 
 export default function TransactionList({
   businessId,
@@ -32,9 +36,12 @@ export default function TransactionList({
   isOwner: boolean
   products: ProductProps[]
 }) {
+  const [user] = useAuthState(auth)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [verifyDialogOpen, setVerifyDialogOpen] = useState(false)
+  const [pendingVerifyId, setPendingVerifyId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!businessId) {
@@ -56,6 +63,28 @@ export default function TransactionList({
     return () => unsubscribe()
   }, [businessId])
 
+  const handleVerify = async (transactionId: string) => {
+    if (!isOwner) return
+    const transactionRef = doc(
+      db,
+      "businesses",
+      businessId,
+      "transactions",
+      transactionId
+    )
+
+    await updateDoc(transactionRef, {
+      verified: true,
+      verifiedAt: Timestamp.now(),
+      verifiedBy: user?.email || "Unknown",
+    })
+      .then(() => toast.success("Transaction verified"))
+      .catch((err) => {
+        console.error(err)
+        toast.error("Failed to verify transaction")
+      })
+  }
+
   const handleDelete = async (transactionId: string) => {
     if (!isOwner) return
     deleteDoc(doc(db, "businesses", businessId, "transactions", transactionId))
@@ -66,45 +95,115 @@ export default function TransactionList({
       })
   }
 
+  console.log("🚀 ~ {transactions.map ~ transactions:", transactions)
   return (
     <div>
       <div className="mt-6 space-y-4">
         {transactions.map((tx, i) => {
           const product = products.find((p) => p.uid === tx.productId)
           return (
-            <div
-              key={`${tx.uid} ~ ${i}`}
-              className="border p-6 rounded-lg space-y-2.5 shadow-sm"
-            >
-              <p className="text-sm lg:text-base">
-                {tx.quantity} unit{tx.quantity > 1 ? "s" : ""} of{" "}
-                <span className="font-medium">
-                  {product?.name ?? "Unknown Product"}
-                </span>{" "}
-                — Total: ₦{tx.total?.toLocaleString()}
-              </p>
+            <Card key={`${tx.uid} ~ ${i}`}>
+              <CardHeader className="flex justify-between items-center">
+                <CardTitle>Transaction</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  #{tx.uid.slice(0, 6)}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2.5">
+                <p className="text-sm lg:text-base">
+                  {tx.quantity} unit{tx.quantity > 1 ? "s" : ""} of{" "}
+                  <span className="font-medium">
+                    {product?.name ?? "Unknown Product"}
+                  </span>
+                </p>
+                <p className="text-sm lg:text-base text-gray-500">
+                  Total:{" "}
+                  <span className="text-gray-950">${tx.total.toFixed(2)}</span>
+                </p>
+                <p className="text-sm lg:text-base text-gray-500">
+                  Added by:{" "}
+                  <span className="text-gray-950">
+                    {tx.createdBy || "Unknown"}
+                  </span>
+                </p>
+                <p className="text-sm text-gray-500">
+                  Verified by:{" "}
+                  <span className="text-gray-950">
+                    {tx.verifiedBy || "Not Verified"}
+                  </span>
+                </p>
+                <p className="text-sm text-gray-500">
+                  Created at:{" "}
+                  <span className="text-gray-950">
+                    {tx.createdAt.toDate().toLocaleString()}
+                  </span>
+                </p>
+                {tx.verified && (
+                  <p className="text-xs text-emerald-400">
+                    Verified at:{" "}
+                    <span className="text-emerald-600">
+                      {tx.verifiedAt?.toDate().toLocaleString()}
+                    </span>
+                  </p>
+                )}
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                {isOwner && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="text-red-600 mt-2.5"
+                      onClick={() => {
+                        setPendingDeleteId(tx.uid)
+                        setDeleteDialogOpen(true)
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
 
-              <p className="text-xs text-gray-500">
-                Added by: {tx.createdBy || "Unknown"}
-              </p>
-              {isOwner && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 mt-2.5"
-                  onClick={() => {
-                    setPendingDeleteId(tx.uid)
-                    setDeleteDialogOpen(true)
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Delete
-                </Button>
-              )}
-            </div>
+                    <Button
+                      variant={"secondary"}
+                      onClick={() => {
+                        setPendingVerifyId(tx.uid)
+                        setVerifyDialogOpen(true)
+                      }}
+                    >
+                      {tx.verified ? "Verified" : "Verify"}
+                    </Button>
+                  </>
+                )}
+              </CardFooter>
+            </Card>
           )
         })}
       </div>
+      <AlertDialog open={verifyDialogOpen} onOpenChange={setVerifyDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Verification</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to verify this transaction?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (pendingVerifyId) {
+                  await handleVerify(pendingVerifyId)
+                  setVerifyDialogOpen(false)
+                  setPendingVerifyId(null)
+                }
+              }}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
