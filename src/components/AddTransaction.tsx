@@ -16,10 +16,11 @@ import { Input } from "./ui/input"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { useState } from "react"
+import { toast } from "sonner"
 
 type TransactionFormProps = z.infer<typeof transactionSchema>
 
-export default function TransactionForm({
+export default function AddTransaction({
   products,
   onSubmit,
 }: {
@@ -47,12 +48,24 @@ export default function TransactionForm({
 
   const [price, setPrice] = useState<string>("")
   const [total, setTotal] = useState<string>("")
+  const [lastSubmitted, setLastSubmitted] = useState<number | null>(null)
+  console.log("🚀 ~ lastSubmitted:", lastSubmitted)
 
   const handleFormSubmit = async (data: TransactionFormProps) => {
+    const now = new Date()
+
+    if (lastSubmitted && now.getTime() - lastSubmitted < 60000) {
+      toast.warning(
+        "Please wait a minute before submitting another transaction."
+      )
+      return
+    }
     const product = products.find((p) => p.uid === data.productId)
     const total = product ? product.price * data.quantity : 0
 
     await onSubmit({ ...data, total, verified: false })
+
+    setLastSubmitted(now.getTime())
     setPrice("")
     setTotal("")
     reset()
@@ -67,7 +80,9 @@ export default function TransactionForm({
         className="space-y-3"
       >
         <CardHeader>
-          <CardTitle>Add Transaction</CardTitle>
+          <CardTitle className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+            Add Transaction
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2.5">
           <Controller

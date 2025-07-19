@@ -8,7 +8,13 @@ import Layout from "@/components/Layout"
 import type { ProfileProps } from "@/lib/types"
 import AddProduct from "@/components/AddProduct"
 import ProductList from "@/components/ProductList"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "@/components/ui/card"
 
 export default function ProductsPage() {
   const [user] = useAuthState(auth)
@@ -33,7 +39,10 @@ export default function ProductsPage() {
         {profile.role === "owner" && (
           <Card className="w-full grid gap-4 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl">
             <CardHeader>
-              <CardTitle>Add Product</CardTitle>
+              <CardTitle className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+                Add Product
+              </CardTitle>
+              <CardDescription>Add products to your businesses</CardDescription>
             </CardHeader>
             <CardContent>
               <AddProduct businessId={profile.businessId} />

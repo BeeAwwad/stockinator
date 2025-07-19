@@ -62,7 +62,9 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="py-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+          Dashboard
+        </h1>
 
         {profile && (
           <div className="space-y-1">

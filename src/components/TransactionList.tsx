@@ -104,7 +104,7 @@ export default function TransactionList({
           return (
             <Card key={`${tx.uid} ~ ${i}`}>
               <CardHeader className="flex justify-between items-center">
-                <CardTitle>Transaction</CardTitle>
+                <CardTitle className="">Transaction</CardTitle>
                 <p className="text-xs text-muted-foreground">
                   #{tx.uid.slice(0, 6)}
                 </p>
