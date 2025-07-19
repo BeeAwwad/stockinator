@@ -10,7 +10,7 @@ import {
 import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
-import type { Transaction } from "@/lib/types"
+import type { ProductProps, Transaction } from "@/lib/types"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,12 +26,13 @@ import { toast } from "sonner"
 export default function TransactionList({
   businessId,
   isOwner,
+  products,
 }: {
   businessId: string
   isOwner: boolean
+  products: ProductProps[]
 }) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  console.log("🚀 ~ transactions:", transactions)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
@@ -68,37 +69,41 @@ export default function TransactionList({
   return (
     <div>
       <div className="mt-6 space-y-4">
-        {transactions.map((tx, i) => (
-          <div
-            key={`${tx.uid} ~ ${i}`}
-            className="border p-6 rounded-lg space-y-2.5 shadow-sm"
-          >
-            <p>
-              {tx.quantity} units —{" "}
-              <span className="font-medium">
-                Total: ₦{tx.total?.toLocaleString()}
-              </span>
-            </p>
+        {transactions.map((tx, i) => {
+          const product = products.find((p) => p.uid === tx.productId)
+          return (
+            <div
+              key={`${tx.uid} ~ ${i}`}
+              className="border p-6 rounded-lg space-y-2.5 shadow-sm"
+            >
+              <p className="text-sm lg:text-base">
+                {tx.quantity} unit{tx.quantity > 1 ? "s" : ""} of{" "}
+                <span className="font-medium">
+                  {product?.name ?? "Unknown Product"}
+                </span>{" "}
+                — Total: ₦{tx.total?.toLocaleString()}
+              </p>
 
-            <p className="text-xs text-gray-500">
-              Added by: {tx.createdBy || "Unknown"}
-            </p>
-            {isOwner && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-red-600 mt-2.5"
-                onClick={() => {
-                  setPendingDeleteId(tx.uid)
-                  setDeleteDialogOpen(true)
-                }}
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                Delete
-              </Button>
-            )}
-          </div>
-        ))}
+              <p className="text-xs text-gray-500">
+                Added by: {tx.createdBy || "Unknown"}
+              </p>
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 mt-2.5"
+                  onClick={() => {
+                    setPendingDeleteId(tx.uid)
+                    setDeleteDialogOpen(true)
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          )
+        })}
       </div>
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

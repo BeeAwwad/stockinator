@@ -107,6 +107,7 @@ export default function Transaction() {
         <TransactionList
           businessId={profile.businessId}
           isOwner={profile.role === "owner"}
+          products={products}
         />
       </div>
     </Layout>
