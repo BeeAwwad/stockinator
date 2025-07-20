@@ -45,7 +45,10 @@ export default function ProductsPage() {
               <CardDescription>Add products to your businesses</CardDescription>
             </CardHeader>
             <CardContent>
-              <AddProduct businessId={profile.businessId} />
+              <AddProduct
+                isOwner={profile.role === "owner"}
+                businessId={profile.businessId}
+              />
             </CardContent>
           </Card>
         )}

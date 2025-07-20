@@ -95,7 +95,6 @@ export default function TransactionList({
       })
   }
 
-  console.log("🚀 ~ {transactions.map ~ transactions:", transactions)
   return (
     <div>
       <div className="mt-6 space-y-4">
@@ -103,7 +102,7 @@ export default function TransactionList({
           const product = products.find((p) => p.uid === tx.productId)
           return (
             <Card key={`${tx.uid} ~ ${i}`}>
-              <CardHeader className="flex justify-between items-center">
+              <CardHeader className="flex justify-between items-center border-b">
                 <CardTitle className="">Transaction</CardTitle>
                 <p className="text-xs text-muted-foreground">
                   #{tx.uid.slice(0, 6)}

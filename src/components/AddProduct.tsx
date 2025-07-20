@@ -8,7 +8,13 @@ import { db } from "@/lib/firebase"
 
 const INITIAL_FORM = { name: "", sku: "", price: "", stock: "" }
 
-export default function AddProduct({ businessId }: { businessId: string }) {
+export default function AddProduct({
+  businessId,
+  isOwner,
+}: {
+  businessId: string
+  isOwner: boolean
+}) {
   const [form, setForm] = useState(INITIAL_FORM)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,7 +26,7 @@ export default function AddProduct({ businessId }: { businessId: string }) {
 
   const handleSubmit = async () => {
     const { name, price, stock } = form
-    if (!businessId) return
+    if (!businessId || !isOwner) return
 
     const sku = generateSKU(form.name)
 

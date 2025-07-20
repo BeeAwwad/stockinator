@@ -187,6 +187,7 @@ export default function ProductList({
                     ) : (
                       <Button
                         variant="outline"
+                        className="text-rose-600"
                         onClick={() => {
                           setPendingDeleteId(product.uid)
                           setDeleteDialogOpen(true)
@@ -200,8 +201,8 @@ export default function ProductList({
               </>
             ) : (
               <Card>
-                <CardHeader className="flex justify-between">
-                  <CardTitle className="font-semibold text-lg">
+                <CardHeader className="flex justify-between border-b">
+                  <CardTitle className="scroll-m-20 tracking-tight">
                     {product.name}
                   </CardTitle>
                   <p className="text-sm text-gray-500">SKU: {product.sku}</p>

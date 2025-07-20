@@ -49,7 +49,6 @@ export default function AddTransaction({
   const [price, setPrice] = useState<string>("")
   const [total, setTotal] = useState<string>("")
   const [lastSubmitted, setLastSubmitted] = useState<number | null>(null)
-  console.log("🚀 ~ lastSubmitted:", lastSubmitted)
 
   const handleFormSubmit = async (data: TransactionFormProps) => {
     const now = new Date()

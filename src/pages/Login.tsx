@@ -3,6 +3,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  onAuthStateChanged,
   // updateProfile,
 } from "firebase/auth"
 import { auth, db } from "../lib/firebase"
@@ -148,16 +149,24 @@ const Login = () => {
     setLoading(true)
 
     try {
-      const result =
-        data.mode === "login"
-          ? await signInWithEmailAndPassword(auth, data.email, data.password)
-          : await createUserWithEmailAndPassword(
-              auth,
-              data.email,
-              data.password
-            )
+      if (data.mode === "signup") {
+        await createUserWithEmailAndPassword(auth, data.email, data.password)
 
-      await handleAuth(result.user)
+        // Wait for the auth state to confirm user is signed in
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            await handleAuth(user)
+            unsubscribe() // Clean up listener
+          }
+        })
+      } else {
+        const result = await signInWithEmailAndPassword(
+          auth,
+          data.email,
+          data.password
+        )
+        await handleAuth(result.user)
+      }
     } catch (err) {
       console.log("onSubmit ~ Email auth error:", err)
       toast.error("Login or registration failed.")
@@ -255,7 +264,13 @@ const Login = () => {
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
               <Button className="w-full" type="submit" disabled={loading}>
-                {mode === "signup" ? "Sign Up" : "Login"}
+                {loading
+                  ? mode === "signup"
+                    ? "Creating..."
+                    : "Signing in..."
+                  : mode === "signup"
+                  ? "Sign Up"
+                  : "Login"}
               </Button>
               <Button
                 className="w-full"

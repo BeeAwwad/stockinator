@@ -1,6 +1,15 @@
 import { useAuthState } from "react-firebase-hooks/auth"
 import { auth, db } from "../lib/firebase"
-import { doc, getDoc } from "firebase/firestore"
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+} from "firebase/firestore"
 import { useEffect, useState } from "react"
 import Layout from "@/components/Layout"
 import type { ProfileProps } from "@/lib/types"
@@ -18,6 +27,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
+import { twMerge } from "tailwind-merge"
 
 const Dashboard = () => {
   const [user] = useAuthState(auth)
@@ -25,6 +37,7 @@ const Dashboard = () => {
   const [businessName, setBusinessName] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [confirmName, setConfirmName] = useState("")
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -53,10 +66,51 @@ const Dashboard = () => {
     }
   }, [user])
 
-  const handleDelete = (id: string) => {
-    console.log("Bussiness Deleted!", id)
-    navigate("/register-business")
-    navigate(profile?.role === "owner" ? "/register-business" : "/login")
+  const handleDelete = async (businessId: string) => {
+    if (profile?.role !== "owner") return
+    try {
+      // Delete products
+      const productsRef = collection(db, "businesses", businessId, "products")
+      const productDocs = await getDocs(productsRef)
+      for (const docSnap of productDocs.docs) {
+        await deleteDoc(docSnap.ref)
+      }
+
+      // Delete transactions
+      const transactionsRef = collection(
+        db,
+        "businesses",
+        businessId,
+        "transactions"
+      )
+      const txDocs = await getDocs(transactionsRef)
+      for (const docSnap of txDocs.docs) {
+        await deleteDoc(docSnap.ref)
+      }
+
+      // Delete business document
+      await deleteDoc(doc(db, "businesses", businessId))
+
+      // Remove businessId + role from all associated profiles
+      const profilesRef = collection(db, "profiles")
+      const q = query(profilesRef, where("businessId", "==", businessId))
+      const profilesSnap = await getDocs(q)
+
+      const batch = writeBatch(db)
+      profilesSnap.forEach((profileDoc) => {
+        batch.update(profileDoc.ref, {
+          businessId: null,
+          role: "pending",
+        })
+      })
+      await batch.commit()
+
+      toast.success("Business deleted successfully.")
+      navigate("/register-business")
+    } catch (err) {
+      console.error("Failed to delete business:", err)
+      toast.error("Failed to delete business.")
+    }
   }
 
   return (
@@ -123,14 +177,37 @@ const Dashboard = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Business?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this product?
+              This will permanently delete your business, all products, and all
+              transactions.
             </AlertDialogDescription>
+            <div className="space-y-2 my-4">
+              <p className="text-sm text-gray-500">
+                To confirm, type{" "}
+                <span className="text-gray-950 font-medium">
+                  "{businessName}"
+                </span>{" "}
+                below:
+              </p>
+              <Input
+                placeholder="Type business name to confirm"
+                value={confirmName}
+                onChange={(e) => setConfirmName(e.target.value)}
+                className={twMerge(
+                  "text-sm",
+                  confirmName &&
+                    confirmName !== businessName &&
+                    "border-rose-500",
+                  confirmName === businessName && "border-green-500"
+                )}
+              />
+            </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              disabled={confirmName !== businessName}
               onClick={async () => {
                 if (businessId) {
                   await handleDelete(businessId)
