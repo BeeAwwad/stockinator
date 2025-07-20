@@ -116,7 +116,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="py-6">
-        <h1 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+        <h1 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 w-fit">
           Dashboard
         </h1>
 

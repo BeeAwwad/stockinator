@@ -17,15 +17,27 @@ import { Button } from "./ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { useState } from "react"
 import { toast } from "sonner"
+import {
+  collection,
+  getDocs,
+  query,
+  Timestamp,
+  where,
+} from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 type TransactionFormProps = z.infer<typeof transactionSchema>
 
 export default function AddTransaction({
   products,
   onSubmit,
+  businessId,
+  createdBy,
 }: {
   products: ProductProps[]
   onSubmit: (data: TransactionProps) => void
+  businessId: string
+  createdBy: string
 }) {
   const {
     control,
@@ -41,7 +53,7 @@ export default function AddTransaction({
       productId: "",
       quantity: 0,
       total: 0,
-      createdBy: "",
+      createdBy: createdBy,
       createdAt: new Date(),
     },
   })
@@ -50,7 +62,27 @@ export default function AddTransaction({
   const [total, setTotal] = useState<string>("")
   const [lastSubmitted, setLastSubmitted] = useState<number | null>(null)
 
+  const isDuplicateTransaction = async (
+    productId: string,
+    createdBy: string,
+    businessId: string
+  ) => {
+    const now = Timestamp.now()
+    const twoMinutesAgo = Timestamp.fromMillis(now.toMillis() - 2 * 60 * 1000)
+
+    const q = query(
+      collection(db, "businesses", businessId, "transactions"),
+      where("productId", "==", productId),
+      where("createdBy", "==", createdBy),
+      where("createdAt", ">=", twoMinutesAgo)
+    )
+
+    const snapshot = await getDocs(q)
+    return !snapshot.empty
+  }
+
   const handleFormSubmit = async (data: TransactionFormProps) => {
+    console.log("🚀 ~ handleFormSubmit ~ data:", data)
     const now = new Date()
 
     if (lastSubmitted && now.getTime() - lastSubmitted < 60000) {
@@ -61,6 +93,22 @@ export default function AddTransaction({
     }
     const product = products.find((p) => p.uid === data.productId)
     const total = product ? product.price * data.quantity : 0
+
+    if (!businessId) {
+      toast.error("Missing business context.")
+      return
+    }
+
+    const duplicate = await isDuplicateTransaction(
+      data.productId,
+      createdBy,
+      businessId
+    )
+
+    if (duplicate) {
+      toast.warning("Duplicate transaction detected in the last 2 minutes.")
+      return
+    }
 
     await onSubmit({ ...data, total, verified: false })
 

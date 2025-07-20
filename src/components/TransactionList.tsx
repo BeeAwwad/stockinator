@@ -98,6 +98,11 @@ export default function TransactionList({
   return (
     <div>
       <div className="mt-6 space-y-4">
+        {transactions.length === 0 && (
+          <p className="text-center text-muted-foreground text-sm">
+            No transactions availabe yet : |
+          </p>
+        )}
         {transactions.map((tx, i) => {
           const product = products.find((p) => p.uid === tx.productId)
           return (

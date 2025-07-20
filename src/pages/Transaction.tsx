@@ -103,7 +103,12 @@ export default function Transaction() {
   return (
     <Layout>
       <div className="py-6 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl w-full mx-auto">
-        <AddTransaction products={products} onSubmit={createTransaction} />
+        <AddTransaction
+          products={products}
+          onSubmit={createTransaction}
+          businessId={profile.businessId}
+          createdBy={user?.email || "Unknown"}
+        />
         <TransactionList
           businessId={profile.businessId}
           isOwner={profile.role === "owner"}

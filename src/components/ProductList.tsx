@@ -82,7 +82,7 @@ export default function ProductList({
     <div className="grid gap-4 mt-8 w-full max-w-lg md:max-w-xl lg:max-w-2xl">
       {products.length === 0 ? (
         <p className="text-center text-muted-foreground text-sm">
-          No products availabe yet :(
+          No products availabe yet : (
         </p>
       ) : (
         products.map((product) => (
