@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "./ui/alert-dialog"
 import { toast } from "sonner"
+import { Label } from "./ui/label"
 
 export default function ProductList({
   businessId,
@@ -79,7 +80,7 @@ export default function ProductList({
   }
 
   return (
-    <div className="grid gap-4 mt-8 w-full max-w-lg md:max-w-xl lg:max-w-2xl">
+    <div className="grid gap-4 my-6 w-full max-w-lg md:max-w-xl lg:max-w-2xl">
       {products.length === 0 ? (
         <p className="text-center text-muted-foreground text-sm">
           No products availabe yet : (
@@ -91,66 +92,96 @@ export default function ProductList({
               <>
                 <Card>
                   <CardHeader>
-                    <p className="text-gray-600 text-end text-xs">
+                    <p className="text-muted-foreground text-end text-xs">
                       SKU: {product.sku}
                     </p>
                   </CardHeader>
-                  <CardContent className="space-y-2.5">
+                  <CardContent className="space-y-3.5">
                     {isEditing ? (
                       <>
-                        <Input
-                          className="text-sm"
-                          defaultValue={product.name}
-                          onChange={(e) =>
-                            setEditing((prev) => ({
-                              ...prev,
-                              [product.uid]: {
-                                ...prev[product.uid],
-                                name: e.target.value,
-                              },
-                            }))
-                          }
-                        />
-                        <Input
-                          className="text-sm"
-                          defaultValue={product.price}
-                          type="number"
-                          onChange={(e) =>
-                            setEditing((prev) => ({
-                              ...prev,
-                              [product.uid]: {
-                                ...prev[product.uid],
-                                price: Number(e.target.value),
-                              },
-                            }))
-                          }
-                        />
-                        <Input
-                          className="text-sm"
-                          defaultValue={product.stock}
-                          type="number"
-                          onChange={(e) =>
-                            setEditing((prev) => ({
-                              ...prev,
-                              [product.uid]: {
-                                ...prev[product.uid],
-                                stock: Number(e.target.value),
-                              },
-                            }))
-                          }
-                        />
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">
+                            Product Name
+                          </Label>
+                          <Input
+                            className="text-sm h-[2.13rem]  py-1.5"
+                            defaultValue={product.name}
+                            onChange={(e) =>
+                              setEditing((prev) => ({
+                                ...prev,
+                                [product.uid]: {
+                                  ...prev[product.uid],
+                                  name: e.target.value,
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs  text-muted-foreground">
+                            Price
+                          </Label>
+                          <Input
+                            className="text-sm h-[2.13rem] py-1.5"
+                            defaultValue={product.price}
+                            type="number"
+                            onChange={(e) =>
+                              setEditing((prev) => ({
+                                ...prev,
+                                [product.uid]: {
+                                  ...prev[product.uid],
+                                  price: Number(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">
+                            Stock
+                          </Label>
+                          <Input
+                            className="text-sm h-[2.13rem] py-1.5"
+                            defaultValue={product.stock}
+                            type="number"
+                            onChange={(e) =>
+                              setEditing((prev) => ({
+                                ...prev,
+                                [product.uid]: {
+                                  ...prev[product.uid],
+                                  stock: Number(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm px-3 py-1.5 border rounded-sm">
-                          {product.name}
-                        </p>
-                        <p className="text-sm px-3 py-1.5 border rounded-sm">
-                          {product.price}
-                        </p>
-                        <p className="text-sm px-3 py-1.5 border rounded-sm">
-                          {product.stock}
-                        </p>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">
+                            Product Name
+                          </Label>
+                          <p className="text-sm px-3 py-1.5 border rounded-sm">
+                            {product.name}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">
+                            Price
+                          </Label>
+                          <p className="text-sm px-3 py-1.5 border rounded-sm">
+                            {product.price}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">
+                            Stock
+                          </Label>
+                          <p className="text-sm px-3 py-1.5 border rounded-sm">
+                            {product.stock}
+                          </p>
+                        </div>
                       </>
                     )}
                   </CardContent>
@@ -209,9 +240,13 @@ export default function ProductList({
                 </CardHeader>
                 <CardContent className="space-y-2.5">
                   <p className="text-sm lg:text-base">
-                    Price: ₦{product.price}
+                    <span className="text-muted-foreground">Price:</span> ₦
+                    {product.price}
                   </p>
-                  <p className="text-sm lg:text-base">Stock: {product.stock}</p>
+                  <p className="text-sm lg:text-base">
+                    <span className="text-muted-foreground">Stock:</span>{" "}
+                    {product.stock}
+                  </p>
                 </CardContent>
               </Card>
             )}

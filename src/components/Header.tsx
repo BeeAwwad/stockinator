@@ -33,7 +33,10 @@ const Header = () => {
     <header className="bg-gray-800">
       <nav className="text-white h-14 md:h-16 px-4 py-3 flex items-center justify-between text-xs md:text-sm mx-auto max-w-lg md:max-w-xl lg:max-w-5xl 2xl:max-w-7xl">
         <div className="flex justify-between items-center w-full space-x-4">
-          <Link to="/" className="hover:underline font-medium">
+          <Link
+            to={user ? "/" : "/login"}
+            className="hover:underline font-medium"
+          >
             Stockinator
           </Link>
           <div className="flex space-x-4">

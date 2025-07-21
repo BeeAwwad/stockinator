@@ -85,6 +85,7 @@ export default function Transaction() {
           total,
           createdBy: user?.email ?? "unknown",
           createdAt: new Date(),
+          verified: false,
         })
       })
       toast.success("Transaction created")

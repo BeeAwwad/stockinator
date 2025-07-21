@@ -5,10 +5,14 @@ import Login from "@/pages/Login"
 import Transaction from "@/pages/Transaction"
 // import ProtectedRoute from "@/auth/ProtectedRoute"
 import Register from "@/pages/Register"
+import ResetPassword from "@/pages/ResetPassword"
+import ResetComplete from "@/pages/ResetComplete"
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/rest-password" element={<ResetPassword />} />
+      <Route path="/reset-complete" element={<ResetComplete />} />
       <Route path="/register-business" element={<Register />} />
       <Route
         path="/"

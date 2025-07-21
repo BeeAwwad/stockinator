@@ -110,7 +110,12 @@ const Login = () => {
             createdAt: new Date(),
           })
 
-          await deleteDoc(inviteDoc.ref)
+          try {
+            await deleteDoc(inviteDoc.ref)
+          } catch (err) {
+            console.error("Failed to delete invite:", err)
+            toast.error("Failed to delete invite after registration.")
+          }
           role = "vendor"
         } else {
           await setDoc(profileRef, {

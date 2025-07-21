@@ -97,7 +97,7 @@ export default function TransactionList({
 
   return (
     <div>
-      <div className="mt-6 space-y-4">
+      <div className="my-6 space-y-4">
         {transactions.length === 0 && (
           <p className="text-center text-muted-foreground text-sm">
             No transactions availabe yet : |
@@ -114,38 +114,49 @@ export default function TransactionList({
                 </p>
               </CardHeader>
               <CardContent className="space-y-2.5">
-                <p className="text-sm lg:text-base">
-                  {tx.quantity} unit{tx.quantity > 1 ? "s" : ""} of{" "}
-                  <span className="font-medium">
-                    {product?.name ?? "Unknown Product"}
+                <p className="text-sm lg:text-base flex">
+                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                    Quantity:{" "}
+                  </span>
+                  {tx.quantity} unit{tx.quantity > 1 ? "s" : ""} of
+                  <span className="ml-1">
+                    {product?.name ?? " Unknown Product"}
                   </span>
                 </p>
-                <p className="text-sm lg:text-base text-gray-500">
-                  Total:{" "}
-                  <span className="text-gray-950">${tx.total.toFixed(2)}</span>
+                <p className="text-sm lg:text-base flex">
+                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                    Total:{" "}
+                  </span>
+                  <span>${tx.total.toFixed(2)}</span>
                 </p>
-                <p className="text-sm lg:text-base text-gray-500">
-                  Added by:{" "}
+                <p className="text-sm lg:text-base flex">
+                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                    Added by:{" "}
+                  </span>
                   <span className="text-gray-950">
                     {tx.createdBy || "Unknown"}
                   </span>
                 </p>
-                <p className="text-sm text-gray-500">
-                  Verified by:{" "}
-                  <span className="text-gray-950">
-                    {tx.verifiedBy || "Not Verified"}
+                <p className="text-sm flex">
+                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                    Verified by:{" "}
                   </span>
+                  <span>{tx.verifiedBy || "Not Verified"}</span>
                 </p>
-                <p className="text-sm text-gray-500">
-                  Created at:{" "}
+                <p className="text-sm flex">
+                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                    Created at:{" "}
+                  </span>
                   <span className="text-gray-950">
                     {tx.createdAt.toDate().toLocaleString()}
                   </span>
                 </p>
                 {tx.verified && (
-                  <p className="text-xs text-emerald-400">
-                    Verified at:{" "}
-                    <span className="text-emerald-600">
+                  <p className="text-sm flex">
+                    <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                      Verified at:{" "}
+                    </span>
+                    <span className="text-emerald-500">
                       {tx.verifiedAt?.toDate().toLocaleString()}
                     </span>
                   </p>

@@ -82,7 +82,6 @@ export default function AddTransaction({
   }
 
   const handleFormSubmit = async (data: TransactionFormProps) => {
-    console.log("🚀 ~ handleFormSubmit ~ data:", data)
     const now = new Date()
 
     if (lastSubmitted && now.getTime() - lastSubmitted < 60000) {
