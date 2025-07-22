@@ -99,7 +99,7 @@ export default function Transaction() {
     fetchData()
   }, [user])
 
-  if (!profile) return <p>You're not logged in</p>
+  if (!profile) return <p>Loading...</p>
 
   return (
     <Layout>

@@ -3,10 +3,11 @@ import Dashboard from "@/pages/Dashboard"
 import Products from "@/pages/Products"
 import Login from "@/pages/Login"
 import Transaction from "@/pages/Transaction"
-// import ProtectedRoute from "@/auth/ProtectedRoute"
+import ProtectedRoute from "@/auth/ProtectedRoute"
 import Register from "@/pages/Register"
 import ResetPassword from "@/pages/ResetPassword"
 import ResetComplete from "@/pages/ResetComplete"
+import NotFound from "@/pages/NotFound"
 const AppRoutes = () => {
   return (
     <Routes>
@@ -17,35 +18,29 @@ const AppRoutes = () => {
       <Route
         path="/"
         element={
-          //   <ProtectedRoute>
-          <Dashboard />
-          //   </ProtectedRoute>
+          <ProtectedRoute>
+            <Dashboard />
+            //{" "}
+          </ProtectedRoute>
         }
       />
       <Route
         path="/products"
         element={
-          //   <ProtectedRoute>
-          <Products />
-          //   </ProtectedRoute>
+          <ProtectedRoute>
+            <Products />
+          </ProtectedRoute>
         }
       />
       <Route
         path="/transactions"
         element={
-          //   <ProtectedRoute>
-          <Transaction />
-          //   </ProtectedRoute>
+          <ProtectedRoute>
+            <Transaction />
+          </ProtectedRoute>
         }
       />
-      <Route
-        path="/products"
-        element={
-          //   <ProtectedRoute>
-          <Products />
-          //   </ProtectedRoute>
-        }
-      />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }

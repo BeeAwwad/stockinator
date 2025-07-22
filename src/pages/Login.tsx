@@ -182,12 +182,10 @@ const Login = () => {
 
   return (
     <Layout>
-      <div className="flex items-center justify-center mt-8">
+      <div className="flex items-center flex-col justify-center mt-8">
         <Card className="w-full py-6 max-w-sm md:max-w-md lg:max-w-lg">
           <CardHeader>
-            <CardTitle>
-              {mode === "signup" ? "Create Account" : "Sign In"}
-            </CardTitle>
+            <CardTitle>{mode === "signup" ? "Sign Up" : "Sign In"}</CardTitle>
             <CardDescription>
               {mode === "signup"
                 ? "Enter your email to create your account"
@@ -287,6 +285,22 @@ const Login = () => {
               </Button>
             </CardFooter>
           </form>
+        </Card>
+
+        <Card className="w-full max-w-sm mt-6">
+          <CardHeader>
+            <CardTitle className="text-center text-lg font-semibold">
+              Test Credentials
+            </CardTitle>
+            <CardDescription className="text-center text-sm text-muted-foreground">
+              Use these credentials to test the app:
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground text-center">
+              test@admin.com - test1234
+            </p>
+          </CardContent>
         </Card>
       </div>
     </Layout>
