@@ -8,6 +8,7 @@ import Register from "@/pages/Register"
 import ResetPassword from "@/pages/ResetPassword"
 import ResetComplete from "@/pages/ResetComplete"
 import NotFound from "@/pages/NotFound"
+import Notifications from "@/pages/Notifications"
 const AppRoutes = () => {
   return (
     <Routes>
@@ -20,7 +21,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
-            //{" "}
           </ProtectedRoute>
         }
       />
@@ -37,6 +37,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Transaction />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <Notifications />
           </ProtectedRoute>
         }
       />

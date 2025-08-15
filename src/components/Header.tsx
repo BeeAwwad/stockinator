@@ -50,11 +50,20 @@ const Header = () => {
                 </Link>
               </>
             )}
-            {hasBusiness || !user ? (
+
+            {!user || hasBusiness ? (
               <></>
             ) : (
-              <Link to="/create-business" className="hover:underline">
-                Create Business
+              <>
+                <Link to="/register-business" className="hover:underline">
+                  Create Business
+                </Link>
+              </>
+            )}
+
+            {user && (
+              <Link to="/notifications" className="hover:underline">
+                Notifications
               </Link>
             )}
           </div>

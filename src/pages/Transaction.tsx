@@ -9,7 +9,6 @@ import {
   // addDoc,
 } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
-import Layout from "@/components/Layout"
 import AddTransaction from "@/components/AddTransaction"
 import TransactionList from "@/components/TransactionList"
 import type { ProductProps, ProfileProps, TransactionProps } from "@/lib/types"
@@ -102,20 +101,18 @@ export default function Transaction() {
   if (!profile) return <p>Loading...</p>
 
   return (
-    <Layout>
-      <div className="py-6 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl w-full mx-auto">
-        <AddTransaction
-          products={products}
-          onSubmit={createTransaction}
-          businessId={profile.businessId}
-          createdBy={user?.email || "Unknown"}
-        />
-        <TransactionList
-          businessId={profile.businessId}
-          isOwner={profile.role === "owner"}
-          products={products}
-        />
-      </div>
-    </Layout>
+    <div className="py-6 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl w-full mx-auto">
+      <AddTransaction
+        products={products}
+        onSubmit={createTransaction}
+        businessId={profile.businessId}
+        createdBy={user?.email || "Unknown"}
+      />
+      <TransactionList
+        businessId={profile.businessId}
+        isOwner={profile.role === "owner"}
+        products={products}
+      />
+    </div>
   )
 }

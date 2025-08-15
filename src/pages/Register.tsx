@@ -10,7 +10,6 @@ import {
 } from "firebase/firestore"
 import { useNavigate } from "react-router-dom"
 import { useAuthState } from "react-firebase-hooks/auth"
-import Layout from "@/components/Layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -77,32 +76,30 @@ const Register = () => {
   }
 
   return (
-    <Layout>
-      <div className="p-6 mt-8 flex justify-center">
-        <Card className="w-full max-w-sm py-6 md:max-w-md lg:max-w-lg">
-          <form onSubmit={handleSubmit}>
-            <CardHeader>
-              <CardTitle>Register Your Business</CardTitle>
-              <CardDescription>Give your business a name</CardDescription>
-            </CardHeader>
-            <CardContent className="my-5">
-              <Input
-                type="text"
-                className="border w-full p-2 rounded"
-                placeholder="Business Name"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-              />
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Creating..." : "Create Business"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </Layout>
+    <div className="p-6 mt-8 flex justify-center">
+      <Card className="w-full max-w-sm py-6 md:max-w-md lg:max-w-lg">
+        <form onSubmit={handleSubmit}>
+          <CardHeader>
+            <CardTitle>Register Your Business</CardTitle>
+            <CardDescription>Give your business a name</CardDescription>
+          </CardHeader>
+          <CardContent className="my-5">
+            <Input
+              type="text"
+              className="border w-full p-2 rounded"
+              placeholder="Business Name"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+            />
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? "Creating..." : "Create Business"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
   )
 }
 

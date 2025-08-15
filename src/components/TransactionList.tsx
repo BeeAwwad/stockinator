@@ -115,7 +115,7 @@ export default function TransactionList({
               </CardHeader>
               <CardContent className="space-y-2.5">
                 <p className="text-sm lg:text-base flex">
-                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                  <span className="text-muted-foreground w-20 mr-1">
                     Quantity:{" "}
                   </span>
                   {tx.quantity} unit{tx.quantity > 1 ? "s" : ""} of
@@ -124,13 +124,13 @@ export default function TransactionList({
                   </span>
                 </p>
                 <p className="text-sm lg:text-base flex">
-                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                  <span className="text-muted-foreground w-20 mr-1">
                     Total:{" "}
                   </span>
-                  <span>${tx.total.toFixed(2)}</span>
+                  <span>₦{tx.total.toFixed(2)}</span>
                 </p>
                 <p className="text-sm lg:text-base flex">
-                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                  <span className="text-muted-foreground w-20 mr-1">
                     Added by:{" "}
                   </span>
                   <span className="text-gray-950">
@@ -138,13 +138,13 @@ export default function TransactionList({
                   </span>
                 </p>
                 <p className="text-sm flex">
-                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                  <span className="text-muted-foreground w-20 mr-1">
                     Verified by:{" "}
                   </span>
                   <span>{tx.verifiedBy || "Not Verified"}</span>
                 </p>
                 <p className="text-sm flex">
-                  <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                  <span className="text-muted-foreground w-20  mr-1">
                     Created at:{" "}
                   </span>
                   <span className="text-gray-950">
@@ -153,7 +153,7 @@ export default function TransactionList({
                 </p>
                 {tx.verified && (
                   <p className="text-sm flex">
-                    <span className="text-muted-foreground w-20 border-r-2 mr-1">
+                    <span className="text-muted-foreground w-20 mr-1">
                       Verified at:{" "}
                     </span>
                     <span className="text-emerald-500">

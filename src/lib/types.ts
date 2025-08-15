@@ -38,3 +38,27 @@ export type Transaction = {
   verifiedAt?: Timestamp
   verifiedBy?: string
 }
+
+export type PendingInvite = {
+  uid: string
+  email: string | null
+  businessId: string
+  invitedBy: string
+  createdAt: string
+  role: "vendor" | "pending" | "owner"
+}
+
+export type Notification = {
+  id: string
+  type: string
+  toUserId: string
+  read: boolean
+  createdAt: Timestamp
+  data: {
+    email?: string
+    inviteId?: string
+    inviterId?: string
+    businessId?: string
+    declinedBy?: string
+  }
+}
