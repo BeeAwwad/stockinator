@@ -1,33 +1,42 @@
-import { Link, useNavigate } from "react-router-dom"
-import { useAuthState } from "react-firebase-hooks/auth"
-import { auth, db } from "../lib/firebase"
-import { useEffect, useState } from "react"
-import { doc, getDoc } from "firebase/firestore"
-import { Button } from "./ui/button"
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
+import { supabase } from "@/lib/supabaseClient";
+import { useSupabaseAuth } from "@/hook/useSupabaseAuth";
+import { toast } from "sonner";
 
 const Header = () => {
-  const [user] = useAuthState(auth)
-  const [hasBusiness, setHasBusiness] = useState<boolean>(false)
-  const navigate = useNavigate()
+  const { user, loading } = useSupabaseAuth();
+  const [hasBusiness, setHasBusiness] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchProfile() {
-      if (!user) return
-      const profileRef = doc(db, "profiles", user.uid)
-      const profileSnap = await getDoc(profileRef)
-      const profileData = profileSnap.data()
-
-      if (profileData) {
-        setHasBusiness(!!profileData.businessId)
+      if (!user) {
+        setHasBusiness(false);
+        return;
       }
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("business_id")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        toast.error("Error fetching profile");
+        return;
+      }
+      setHasBusiness(!!profile?.business_id);
     }
-    fetchProfile()
-  }, [user])
+    if (!loading) fetchProfile();
+  }, [user, loading]);
 
   const logout = async () => {
-    await auth.signOut()
-    navigate("/login")
-  }
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
 
   return (
     <header className="bg-gray-800">
@@ -78,7 +87,7 @@ const Header = () => {
         </div>
       </nav>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

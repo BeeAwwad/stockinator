@@ -1,18 +1,7 @@
-import { useEffect, useState } from "react"
-import {
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  updateDoc,
-  orderBy,
-  query,
-  Timestamp,
-} from "firebase/firestore"
-import { auth, db } from "@/lib/firebase"
-import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
-import type { ProductProps, Transaction } from "@/lib/types"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import type { ProductProps, Transaction } from "@/lib/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,78 +11,106 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "./ui/alert-dialog"
-import { toast } from "sonner"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
-import { useAuthState } from "react-firebase-hooks/auth"
+} from "./ui/alert-dialog";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function TransactionList({
   businessId,
   isOwner,
   products,
 }: {
-  businessId: string
-  isOwner: boolean
-  products: ProductProps[]
+  businessId: string;
+  isOwner: boolean;
+  products: ProductProps[];
 }) {
-  const [user] = useAuthState(auth)
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
-  const [verifyDialogOpen, setVerifyDialogOpen] = useState(false)
-  const [pendingVerifyId, setPendingVerifyId] = useState<string | null>(null)
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
+  const [pendingVerifyId, setPendingVerifyId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!businessId) {
-      toast.error("You're not allowed to delete this tranasaction.")
-      return
-    }
-    const q = query(
-      collection(db, "businesses", businessId, "transactions"),
-      orderBy("createdAt", "desc")
-    )
+    if (!businessId) return;
 
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const list = snap.docs.map(
-        (doc) => ({ uid: doc.id, ...doc.data() } as Transaction)
+    const fetchTransactions = async () => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("business_id", businessId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        toast.error("Failed to load transactions");
+        return;
+      }
+      setTransactions(data as Transaction[]);
+    };
+
+    fetchTransactions();
+
+    const channel = supabase
+      .channel(`transactions-${businessId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "transactions",
+          filter: `business_id=eq.${businessId}`,
+        },
+        (payload) => {
+          console.log("Realtime transaction change:", payload);
+          fetchTransactions();
+        }
       )
-      setTransactions(list)
-    })
+      .subscribe();
 
-    return () => unsubscribe()
-  }, [businessId])
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [businessId]);
 
   const handleVerify = async (transactionId: string) => {
-    if (!isOwner) return
-    const transactionRef = doc(
-      db,
-      "businesses",
-      businessId,
-      "transactions",
-      transactionId
-    )
-
-    await updateDoc(transactionRef, {
-      verified: true,
-      verifiedAt: Timestamp.now(),
-      verifiedBy: user?.email || "Unknown",
-    })
-      .then(() => toast.success("Transaction verified"))
-      .catch((err) => {
-        console.error(err)
-        toast.error("Failed to verify transaction")
+    if (!isOwner) return;
+    const { error } = await supabase
+      .from("transaction")
+      .update({
+        verified: true,
+        verified_at: new Date().toISOString(),
       })
-  }
+      .eq("id", transactionId);
+
+    if (error) {
+      console.error(error);
+      toast.error("Failed to verify transaction");
+      return;
+    }
+    toast.success("Transaction verified");
+  };
 
   const handleDelete = async (transactionId: string) => {
-    if (!isOwner) return
-    deleteDoc(doc(db, "businesses", businessId, "transactions", transactionId))
-      .then(() => toast.success("Transaction deleted"))
-      .catch((err) => {
-        console.error(err)
-        toast.error("Failed to delete transaction")
-      })
-  }
+    if (!isOwner) return;
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("id", transactionId);
+
+    if (error) {
+      console.error("Failed to delete transaction");
+      return;
+    }
+
+    toast.success("Transaction deleted");
+  };
 
   return (
     <div>
@@ -104,13 +121,13 @@ export default function TransactionList({
           </p>
         )}
         {transactions.map((tx, i) => {
-          const product = products.find((p) => p.uid === tx.productId)
+          const product = products.find((p) => p.id === tx.productId);
           return (
-            <Card key={`${tx.uid} ~ ${i}`}>
+            <Card key={`${tx.id} ~ ${i}`}>
               <CardHeader className="flex justify-between items-center border-b">
                 <CardTitle className="">Transaction</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  #{tx.uid.slice(0, 6)}
+                  #{tx.id.slice(0, 6)}
                 </p>
               </CardHeader>
               <CardContent className="space-y-2.5">
@@ -148,7 +165,7 @@ export default function TransactionList({
                     Created at:{" "}
                   </span>
                   <span className="text-gray-950">
-                    {tx.createdAt.toDate().toLocaleString()}
+                    {new Date(tx.createdAt).toLocaleDateString()}
                   </span>
                 </p>
                 {tx.verified && (
@@ -157,7 +174,8 @@ export default function TransactionList({
                       Verified at:{" "}
                     </span>
                     <span className="text-emerald-500">
-                      {tx.verifiedAt?.toDate().toLocaleString()}
+                      {tx.verifiedAt &&
+                        new Date(tx.verifiedAt).toLocaleString()}
                     </span>
                   </p>
                 )}
@@ -170,8 +188,8 @@ export default function TransactionList({
                       size="sm"
                       className="text-red-600 mt-2.5"
                       onClick={() => {
-                        setPendingDeleteId(tx.uid)
-                        setDeleteDialogOpen(true)
+                        setPendingDeleteId(tx.id);
+                        setDeleteDialogOpen(true);
                       }}
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
@@ -181,8 +199,8 @@ export default function TransactionList({
                     <Button
                       variant={"secondary"}
                       onClick={() => {
-                        setPendingVerifyId(tx.uid)
-                        setVerifyDialogOpen(true)
+                        setPendingVerifyId(tx.id);
+                        setVerifyDialogOpen(true);
                       }}
                     >
                       {tx.verified ? "Verified" : "Verify"}
@@ -191,7 +209,7 @@ export default function TransactionList({
                 )}
               </CardFooter>
             </Card>
-          )
+          );
         })}
       </div>
       <AlertDialog open={verifyDialogOpen} onOpenChange={setVerifyDialogOpen}>
@@ -207,9 +225,9 @@ export default function TransactionList({
             <AlertDialogAction
               onClick={async () => {
                 if (pendingVerifyId) {
-                  await handleVerify(pendingVerifyId)
-                  setVerifyDialogOpen(false)
-                  setPendingVerifyId(null)
+                  await handleVerify(pendingVerifyId);
+                  setVerifyDialogOpen(false);
+                  setPendingVerifyId(null);
                 }
               }}
             >
@@ -232,9 +250,9 @@ export default function TransactionList({
             <AlertDialogAction
               onClick={async () => {
                 if (pendingDeleteId) {
-                  await handleDelete(pendingDeleteId)
-                  setDeleteDialogOpen(false)
-                  setPendingDeleteId(null)
+                  await handleDelete(pendingDeleteId);
+                  setDeleteDialogOpen(false);
+                  setPendingDeleteId(null);
                 }
               }}
             >
@@ -244,5 +262,5 @@ export default function TransactionList({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

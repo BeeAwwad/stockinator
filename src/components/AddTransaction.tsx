@@ -1,32 +1,31 @@
-"use client"
+"use client";
 
-import { useForm, Controller } from "react-hook-form"
-import type { ProductProps, TransactionProps } from "@/lib/types"
-import z from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { transactionSchema } from "@/lib/schemas"
+import { useForm, Controller } from "react-hook-form";
+import type { ProductProps, TransactionProps } from "@/lib/types";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { transactionSchema } from "@/lib/schemas";
 import {
   Select,
   SelectItem,
   SelectTrigger,
   SelectContent,
   SelectValue,
-} from "./ui/select"
-import { Input } from "./ui/input"
-import { Button } from "./ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
-import { useState } from "react"
-import { toast } from "sonner"
+} from "./ui/select";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 import {
-  collection,
-  getDocs,
-  query,
-  Timestamp,
-  where,
-} from "firebase/firestore"
-import { db } from "@/lib/firebase"
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabaseClient";
 
-type TransactionFormProps = z.infer<typeof transactionSchema>
+type TransactionFormProps = z.infer<typeof transactionSchema>;
 
 export default function AddTransaction({
   products,
@@ -34,10 +33,10 @@ export default function AddTransaction({
   businessId,
   createdBy,
 }: {
-  products: ProductProps[]
-  onSubmit: (data: TransactionProps) => void
-  businessId: string
-  createdBy: string
+  products: ProductProps[];
+  onSubmit: (data: TransactionProps) => void;
+  businessId: string;
+  createdBy: string;
 }) {
   const {
     control,
@@ -56,72 +55,91 @@ export default function AddTransaction({
       createdBy: createdBy,
       createdAt: new Date(),
     },
-  })
+  });
 
-  const [price, setPrice] = useState<string>("")
-  const [total, setTotal] = useState<string>("")
-  const [lastSubmitted, setLastSubmitted] = useState<number | null>(null)
+  const [price, setPrice] = useState<string>("");
+  const [total, setTotal] = useState<string>("");
+  const [lastSubmitted, setLastSubmitted] = useState<number | null>(null);
 
   const isDuplicateTransaction = async (
     productId: string,
     createdBy: string,
     businessId: string
   ) => {
-    const now = Timestamp.now()
-    const twoMinutesAgo = Timestamp.fromMillis(now.toMillis() - 2 * 60 * 1000)
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
 
-    const q = query(
-      collection(db, "businesses", businessId, "transactions"),
-      where("productId", "==", productId),
-      where("createdBy", "==", createdBy),
-      where("createdAt", ">=", twoMinutesAgo)
-    )
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("id")
+      .eq("business_id", businessId)
+      .eq("product_id", productId)
+      .eq("created_by", createdBy)
+      .gte("created_at", twoMinutesAgo.toISOString());
 
-    const snapshot = await getDocs(q)
-    return !snapshot.empty
-  }
+    if (error) {
+      console.error("Error checking duplicates:", error);
+      return false;
+    }
+
+    return data.length > 0;
+  };
 
   const handleFormSubmit = async (data: TransactionFormProps) => {
-    const now = new Date()
+    const now = new Date();
 
     if (lastSubmitted && now.getTime() - lastSubmitted < 60000) {
       toast.warning(
         "Please wait a minute before submitting another transaction."
-      )
-      return
+      );
+      return;
     }
-    const product = products.find((p) => p.uid === data.productId)
-    const total = product ? product.price * data.quantity : 0
+    const product = products.find((p) => p.id === data.productId);
+    const total = product ? product.price * data.quantity : 0;
 
     if (!businessId) {
-      toast.error("Missing business context.")
-      return
+      toast.error("Missing business context.");
+      return;
     }
 
     const duplicate = await isDuplicateTransaction(
       data.productId,
       createdBy,
       businessId
-    )
+    );
 
     if (duplicate) {
-      toast.warning("Duplicate transaction detected in the last 2 minutes.")
-      return
+      toast.warning("Duplicate transaction detected in the last 2 minutes.");
+      return;
     }
 
-    await onSubmit({ ...data, total, verified: false })
+    const { error } = await supabase.from("transactions").insert({
+      business_id: businessId,
+      product_id: data.productId,
+      quantity: data.quantity,
+      total,
+      created_by: createdBy,
+      verified: false,
+    });
 
-    setLastSubmitted(now.getTime())
-    setPrice("")
-    setTotal("")
-    reset()
-  }
+    if (error) {
+      console.error("Insert failed:", error);
+      toast.error("Failed to add transaction.");
+      return;
+    }
+
+    toast.success("Transaction created!");
+    await onSubmit({ ...data, total, verified: false });
+    setLastSubmitted(now.getTime());
+    setPrice("");
+    setTotal("");
+    reset();
+  };
 
   return (
     <Card>
       <form
         onSubmit={handleSubmit(handleFormSubmit, (errors) => {
-          console.log("🧨 FORM ERRORS:", errors)
+          console.log("🧨 FORM ERRORS:", errors);
         })}
         className="space-y-3"
       >
@@ -137,22 +155,22 @@ export default function AddTransaction({
             rules={{ required: true }}
             render={({ field }) => {
               const selectedProduct = products.find(
-                (product) => product.uid === getValues().productId
-              )
+                (product) => product.id === getValues().productId
+              );
 
               return (
                 <Select
                   onValueChange={(value) => {
                     const selected = products.find(
-                      (product) => product.uid === value
-                    )
-                    const productPrice = selected?.price ?? 0
-                    const quantity = getValues("quantity") || 0
+                      (product) => product.id === value
+                    );
+                    const productPrice = selected?.price ?? 0;
+                    const quantity = getValues("quantity") || 0;
 
-                    setPrice(productPrice.toString())
-                    setTotal((productPrice * quantity).toFixed(2))
-                    setValue("total", productPrice * quantity)
-                    field.onChange(value)
+                    setPrice(productPrice.toString());
+                    setTotal((productPrice * quantity).toFixed(2));
+                    setValue("total", productPrice * quantity);
+                    field.onChange(value);
                   }}
                   value={getValues().productId}
                 >
@@ -163,13 +181,13 @@ export default function AddTransaction({
                   </SelectTrigger>
                   <SelectContent>
                     {products.map((product) => (
-                      <SelectItem key={product.uid} value={product.uid}>
+                      <SelectItem key={product.id} value={product.id}>
                         {product.name} (Stock: {product.stock})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )
+              );
             }}
           />
           {errors.productId && (
@@ -184,15 +202,15 @@ export default function AddTransaction({
               required: true,
 
               onChange: (e) => {
-                const quantity = Number(e.target.value)
+                const quantity = Number(e.target.value);
                 const product = products.find(
-                  (p) => p.uid === getValues("productId")
-                )
-                const productPrice = product?.price ?? 0
+                  (p) => p.id === getValues("productId")
+                );
+                const productPrice = product?.price ?? 0;
 
-                const newTotal = productPrice * quantity
-                setTotal(newTotal.toFixed(2))
-                setValue("total", newTotal)
+                const newTotal = productPrice * quantity;
+                setTotal(newTotal.toFixed(2));
+                setValue("total", newTotal);
               },
             })}
           />
@@ -219,5 +237,5 @@ export default function AddTransaction({
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }

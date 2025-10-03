@@ -1,18 +1,6 @@
-import { useState, useEffect } from "react"
-import {
-  collection,
-  query,
-  where,
-  doc,
-  setDoc,
-  getDoc,
-  Timestamp,
-  onSnapshot,
-} from "firebase/firestore"
-import { db, auth } from "../lib/firebase"
-import { useAuthState } from "react-firebase-hooks/auth"
-import { toast } from "sonner"
-import { nanoid } from "nanoid"
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { nanoid } from "nanoid";
 import {
   Card,
   CardContent,
@@ -20,79 +8,100 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "./ui/card"
-import { Input } from "./ui/input"
-import { Button } from "./ui/button"
+} from "./ui/card";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
 
 const AddVendor = () => {
-  const [user] = useAuthState(auth)
-  const [email, setEmail] = useState("")
-  const [vendorCount, setVendorCount] = useState(0)
-  const [businessId, setBusinessId] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState("");
+  const [vendorCount, setVendorCount] = useState(0);
+  const [businessId, setBusinessId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return
+    if (!user) return;
 
-    const loadAndListen = async () => {
-      const profileRef = doc(db, "profiles", user.uid)
-      const profileSnap = await getDoc(profileRef)
-      const profileData = profileSnap.data()
+    const loadProfileAndCount = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) return;
+      setUser(data.user);
 
-      if (profileData?.role !== "owner") return
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
 
-      const bId = profileData.businessId
-      setBusinessId(bId)
+      if (profile?.role !== "owner") return;
+      setBusinessId(profile.business_id);
 
-      const invitesQuery = query(
-        collection(db, "invites"),
-        where("businessId", "==", bId),
-        where("role", "==", "vendor")
-      )
+      const channel = supabase
+        .channel("addvendor-realtime")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "invites",
+            filter: `business_id=eq.${profile.business_id}`,
+          },
+          async () => {
+            const { count } = await supabase
+              .from("invites")
+              .select("*", { count: "exact", head: true })
+              .eq("business_id", profile.business_id)
+              .eq("role", "vendor");
 
-      const unsubscribe = onSnapshot(invitesQuery, (snap) => {
-        setVendorCount(snap.size)
-      })
+            setVendorCount(count || 0);
+          }
+        )
+        .subscribe();
 
-      return unsubscribe
-    }
+      const { count } = await supabase
+        .from("invites")
+        .select("*", { count: "exact", head: true })
+        .eq("business_id", profile.business_id)
+        .eq("role", "vendor");
+      setVendorCount(count || 0);
 
-    const cleanup = loadAndListen()
-
-    return () => {
-      cleanup?.then((unsubscribe) => unsubscribe?.())
-    }
-  }, [user])
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+    loadProfileAndCount();
+  }, []);
 
   const handleAddVendor = async () => {
-    const vendorEmail = email.trim().toLowerCase()
+    const vendorEmail = email.trim().toLowerCase();
 
-    if (!vendorEmail || !businessId) return
+    if (!vendorEmail || !businessId) return;
 
     if (vendorCount >= 2) {
-      toast.error("Vendor limit reached (2 max).")
-      return
+      toast.error("Vendor limit reached (2 max).");
+      return;
     }
 
     try {
-      const inviteId = nanoid()
-
-      await setDoc(doc(db, "invites", inviteId), {
+      const inviteId = nanoid();
+      await supabase.from("invites").insert({
+        id: inviteId,
         email: vendorEmail,
-        businessId,
-        role: "vendor",
-        invitedBy: user?.uid,
-        createdAt: Timestamp.now(),
-      })
+        business_id: businessId,
+        invitedBy: user?.id,
+        createdAt: new Date().toISOString(),
+      });
 
-      setEmail("")
-      toast.success("Vendor invited successfully!")
+      setEmail("");
+      toast.success("Vendor invited successfully!");
     } catch (err) {
-      console.error("Failed to invite vendor:", err)
-      toast.error("Failed to invite vendor. Please try again.")
+      console.error("Failed to invite vendor:", err);
+      toast.error("Failed to invite vendor. Please try again.");
     }
-  }
+  };
 
-  if (!businessId) return null
+  if (!businessId) return null;
 
   return (
     <div className="flex items-center">
@@ -120,7 +129,7 @@ const AddVendor = () => {
         </CardFooter>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default AddVendor
+export default AddVendor;

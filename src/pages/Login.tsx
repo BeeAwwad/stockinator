@@ -1,19 +1,9 @@
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-} from "firebase/auth"
-import type { User as FirebaseUser } from "firebase/auth"
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { auth, db } from "../lib/firebase"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   Card,
   CardHeader,
@@ -22,10 +12,11 @@ import {
   CardContent,
   CardFooter,
   CardAction,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { UserAuth } from "@/context/AuthContext";
 
 const loginSchema = z
   .object({
@@ -37,14 +28,16 @@ const loginSchema = z
   .refine(
     (data) => data.mode === "login" || data.password === data.confirmPassword,
     { path: ["confirmPassword"], message: "Passwords do not match" }
-  )
+  );
 
-type FormData = z.infer<typeof loginSchema>
+type FormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { signInUser, signUpNewUser, session } = UserAuth();
+
   const form = useForm<FormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -53,64 +46,40 @@ const Login = () => {
       confirmPassword: "",
       mode: "login",
     },
-  })
+  });
 
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
-  } = form
-  const mode = watch("mode")
-
-  const handleAuth = async (user: FirebaseUser) => {
-    const { uid, email, displayName } = user
-    const profileRef = doc(db, "profiles", uid)
-    const profileSnap = await getDoc(profileRef)
-
-    if (profileSnap.exists()) {
-      const profile = profileSnap.data()
-      const role = profile?.role || "pending"
-      navigate(role === "owner" ? "/register-business" : "/notifications")
-      return
-    }
-
-    await setDoc(profileRef, {
-      role: "pending",
-      businessId: null,
-      displayName: displayName || email,
-      createdAt: Timestamp.now(),
-    })
-
-    navigate("/notifications")
-  }
+  } = form;
+  const mode = watch("mode");
 
   const onSubmit = async (data: FormData) => {
     try {
-      setLoading(true)
+      setLoading(true);
       if (data.mode === "signup") {
-        await createUserWithEmailAndPassword(auth, data.email, data.password)
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            await handleAuth(user)
-            unsubscribe()
-          }
-        })
+        const result = await signUpNewUser(data.email, data.password);
+        if (result.success) {
+          navigate("/notification");
+        }
       } else {
-        const result = await signInWithEmailAndPassword(
-          auth,
-          data.email,
-          data.password
-        )
-        await handleAuth(result.user)
+        const result = await signInUser(data.email, data.password);
+        if (result.success) {
+          navigate("/notification");
+        }
       }
-    } catch (err) {
-      toast.error(`${mode} failed`)
-      console.error(err)
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unexpected error occurred");
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-center flex-col mt-8">
@@ -173,24 +142,24 @@ const Login = () => {
                 ? "Sign Up"
                 : "Login"}
             </Button>
-            <Button
+            {/* <Button
               type="button"
               onClick={async () => {
                 const result = await signInWithPopup(
                   auth,
                   new GoogleAuthProvider()
-                )
-                await handleAuth(result.user)
+                );
+                await handleAuth(result.user);
               }}
               className="w-full"
             >
               Continue with Google
-            </Button>
+            </Button> */}
           </CardFooter>
         </form>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

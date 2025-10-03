@@ -1,17 +1,6 @@
-import { useAuthState } from "react-firebase-hooks/auth"
-import {
-  collection,
-  doc,
-  onSnapshot,
-  query,
-  where,
-  deleteDoc,
-  // getDoc,
-} from "firebase/firestore"
-import { db, auth } from "../lib/firebase"
-import { useEffect, useState } from "react"
-import type { ProfileProps } from "@/lib/types"
-import { toast } from "sonner"
+import { useEffect, useState } from "react";
+import type { ProfileProps } from "@/lib/types";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -21,95 +10,139 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
   AlertDialogDescription,
-} from "@/components/ui/alert-dialog"
-import { Button } from "./ui/button"
+} from "@/components/ui/alert-dialog";
+import { Button } from "./ui/button";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
 
 const VendorList = () => {
-  const [user] = useAuthState(auth)
-  const [vendors, setVendors] = useState<ProfileProps[]>([])
-  const [invites, setInvites] = useState<{ id: string; email: string }[]>([])
-  const [isOwner, setIsOwner] = useState(false)
-  const [businessId, setBusinessId] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null);
+  const [vendors, setVendors] = useState<ProfileProps[]>([]);
+  const [invites, setInvites] = useState<{ id: string; email: string }[]>([]);
+  const [isOwner, setIsOwner] = useState(false);
+  const [businessId, setBusinessId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
-    id: string
-    type: "vendor" | "invite"
-  } | null>(null)
-  const [loading, setLoading] = useState(true)
+    id: string;
+    type: "vendor" | "invite";
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return
+    const loadUserAndProfile = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) return;
+      setUser(data.user);
 
-    const profileRef = doc(db, "profiles", user.uid)
+      // fetch profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
 
-    const unsubscribe = onSnapshot(profileRef, async (snap) => {
-      const profileData = snap.data()
-      if (!profileData?.businessId) return
+      if (!profile?.businessId) return;
 
-      setBusinessId(profileData.businessId)
-      setIsOwner(profileData.role === "owner")
+      setBusinessId(profile.businessId);
+      setIsOwner(profile.role === "owner");
 
-      const vendorQuery = query(
-        collection(db, "profiles"),
-        where("businessId", "==", profileData.businessId),
-        where("role", "==", "vendor")
-      )
+      // fetch vendors
+      const { data: vendorList } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("businessId", profile.businessId)
+        .eq("role", "vendor");
+      setVendors(vendorList || []);
 
-      const inviteQuery = query(
-        collection(db, "invites"),
-        where("businessId", "==", profileData.businessId),
-        where("role", "==", "vendor")
-      )
+      // fetch invites
+      const { data: inviteList } = await supabase
+        .from("invites")
+        .select("id, email")
+        .eq("businessId", profile.businessId)
+        .eq("role", "vendor");
+      setInvites(inviteList || []);
 
-      const unsubscribeVendors = onSnapshot(vendorQuery, (snap) => {
-        const list = snap.docs.map((doc) => ({
-          uid: doc.id,
-          ...doc.data(),
-        })) as ProfileProps[]
-        setVendors(list)
-      })
+      setLoading(false);
 
-      const unsubscribeInvites = onSnapshot(inviteQuery, (snap) => {
-        const list = snap.docs.map((doc) => ({
-          id: doc.id,
-          email: doc.data().email,
-        }))
-        setInvites(list)
-      })
+      // Realtime subscriptions
+      const channel = supabase
+        .channel("vendorlist-realtime")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "profiles",
+            filter: `businessId=eq.${profile.businessId}`,
+          },
+          (payload) => {
+            const newProfile = payload.new as ProfileProps | undefined;
 
-      setLoading(false)
+            if (newProfile?.role === "vendor") {
+              setVendors((prev) => {
+                const filtered = prev.filter((v) => v.id !== newProfile.id);
+                return [...filtered, payload.new as ProfileProps];
+              });
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "invites",
+            filter: `businessId=eq.${profile.businessId}`,
+          },
+          (payload) => {
+            setInvites((prev) => {
+              if (payload.eventType === "DELETE") {
+                return prev.filter((i) => i.id !== payload.old.id);
+              }
+              if (payload.eventType === "INSERT") {
+                return [
+                  ...prev,
+                  { id: payload.new.id, email: payload.new.email },
+                ];
+              }
+              return prev;
+            });
+          }
+        )
+        .subscribe();
 
-      // cleanup nested listeners when auth or businessId changes
       return () => {
-        unsubscribeVendors()
-        unsubscribeInvites()
-      }
-    })
+        supabase.removeChannel(channel);
+      };
+    };
 
-    return () => unsubscribe()
-  }, [user])
+    loadUserAndProfile();
+  }, []);
 
   const handleConfirmDelete = async () => {
-    if (!pendingDelete) return
-    const { id, type } = pendingDelete
+    if (!pendingDelete) return;
+    const { id, type } = pendingDelete;
 
     try {
       if (type === "vendor") {
-        await deleteDoc(doc(db, "profiles", id))
-        toast.success("Vendor removed.")
+        await supabase
+          .from("profiles")
+          .update({ business_id: null, role: "pending" })
+          .eq("id", id);
+        toast.success("Vendor removed.");
       } else {
-        await deleteDoc(doc(db, "invites", id))
-        toast.success("Invite cancelled.")
+        await supabase.from("invites").delete().eq("id", id);
+        toast.success("Invite cancelled.");
       }
     } catch (err) {
-      console.error("Failed to delete:", err)
-      toast.error("Failed to remove. Please try again.")
+      console.error("Failed to delete:", err);
+      toast.error("Failed to remove. Please try again.");
     } finally {
-      setPendingDelete(null)
+      setPendingDelete(null);
     }
-  }
+  };
 
-  if (loading) return <p>Loading vendors...</p>
-  if (!businessId) return null
+  if (loading) return <p>Loading vendors...</p>;
+  if (!businessId) return null;
 
   return (
     <div className="mt-6">
@@ -121,7 +154,7 @@ const VendorList = () => {
         <ul className="space-y-2">
           {vendors.map((v, i) => (
             <li
-              key={v.uid}
+              key={v.id}
               className="flex justify-between items-center bg-green-50 p-2 rounded"
             >
               <div>{v.displayName || v.email || `Vendor ${i + 1}`}</div>
@@ -129,9 +162,7 @@ const VendorList = () => {
                 <Button
                   variant="ghost"
                   className="text-red-600 hover:underline text-sm"
-                  onClick={() =>
-                    setPendingDelete({ id: v.uid, type: "vendor" })
-                  }
+                  onClick={() => setPendingDelete({ id: v.id, type: "vendor" })}
                 >
                   Remove
                 </Button>
@@ -191,7 +222,7 @@ const VendorList = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
-}
+  );
+};
 
-export default VendorList
+export default VendorList;

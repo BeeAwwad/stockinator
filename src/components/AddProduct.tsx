@@ -1,47 +1,55 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
-const INITIAL_FORM = { name: "", sku: "", price: "", stock: "" }
+const INITIAL_FORM = { name: "", sku: "", price: "", stock: "" };
 
 export default function AddProduct({
   businessId,
   isOwner,
 }: {
-  businessId: string
-  isOwner: boolean
+  businessId: string;
+  isOwner: boolean;
 }) {
-  const [form, setForm] = useState(INITIAL_FORM)
+  const [form, setForm] = useState(INITIAL_FORM);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const generateSKU = (name: string) =>
-    `${name.slice(0, 3).toLocaleUpperCase()}-${Date.now().toString().slice(-5)}`
+    `${name.slice(0, 3).toLocaleUpperCase()}-${Date.now()
+      .toString()
+      .slice(-5)}`;
 
   const handleSubmit = async () => {
-    const { name, price, stock } = form
-    if (!businessId || !isOwner) return
+    const { name, price, stock } = form;
+    if (!businessId || !isOwner) return;
 
-    const sku = generateSKU(form.name)
+    const sku = generateSKU(form.name);
 
-    const productsRef = collection(db, "businesses", businessId, "products")
+    const { error } = await supabase.from("products").insert([
+      {
+        business_id: businessId,
+        name,
+        sku,
+        price: Number(price),
+        stock: Number(stock),
+      },
+    ]);
 
-    await addDoc(productsRef, {
-      name,
-      sku,
-      price: Number(price),
-      stock: Number(stock),
-      createdAt: serverTimestamp(),
-    })
-
-    setForm(INITIAL_FORM)
-  }
+    if (error) {
+      console.error("Failed to add product:", error);
+      toast.error("Failed to add product. Please try again.");
+      return;
+    }
+    setForm(INITIAL_FORM);
+    toast.success("Product added successfully!");
+  };
 
   return (
     <div className="space-y-2">
@@ -60,5 +68,5 @@ export default function AddProduct({
         Add Product
       </Button>
     </div>
-  )
+  );
 }

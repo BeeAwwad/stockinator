@@ -1,21 +1,9 @@
-import { useAuthState } from "react-firebase-hooks/auth"
-import { auth, db } from "../lib/firebase"
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  writeBatch,
-} from "firebase/firestore"
-import { useEffect, useState } from "react"
-import type { ProfileProps } from "@/lib/types"
-import AddVendor from "@/components/AddVendor"
-import VendorList from "@/components/VendorList"
-import { Link, useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import type { ProfileProps } from "@/lib/types";
+import AddVendor from "@/components/AddVendor";
+import VendorList from "@/components/VendorList";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,92 +13,86 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { toast } from "sonner"
-import { Input } from "@/components/ui/input"
-import { twMerge } from "tailwind-merge"
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { twMerge } from "tailwind-merge";
+import { supabase } from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 
 const Dashboard = () => {
-  const [user] = useAuthState(auth)
-  const [profile, setProfile] = useState<ProfileProps | null>(null)
-  const [businessName, setBusinessName] = useState<string | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [businessId, setBusinessId] = useState<string | null>(null)
-  const [confirmName, setConfirmName] = useState("")
-  const navigate = useNavigate()
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<ProfileProps | null>(null);
+  const [businessName, setBusinessName] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [confirmName, setConfirmName] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      const loadProfileAndBusiness = async () => {
-        const profileRef = doc(db, "profiles", user.uid)
-        const profileSnap = await getDoc(profileRef)
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ?? null);
+    });
+  }, []);
 
-        if (!profileSnap.exists()) return
+  useEffect(() => {
+    const loadProfileAndBusiness = async () => {
+      if (!user) return;
 
-        const profileData = profileSnap.data() as ProfileProps
-        setProfile(profileData)
+      const { data: profileData, error: profileErr } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
 
-        if (profileData.businessId) {
-          const businessRef = doc(db, "businesses", profileData.businessId)
-          const businessSnap = await getDoc(businessRef)
+      if (profileErr || !profileData) return;
 
-          if (businessSnap.exists()) {
-            const { name } = businessSnap.data()
-            setBusinessName(name)
-          }
+      setProfile(profileData);
+
+      if (profileData.business_id) {
+        const { data: businessData } = await supabase
+          .from("businesses")
+          .select("name")
+          .eq("id", profileData.business_id)
+          .single();
+
+        if (businessData) {
+          setBusinessName(businessData.name);
         }
       }
+    };
 
-      loadProfileAndBusiness()
-    }
-  }, [user])
+    loadProfileAndBusiness();
+  }, [user]);
 
   const handleDelete = async (businessId: string) => {
-    if (profile?.role !== "owner") return
+    if (profile?.role !== "owner") return;
     try {
       // Delete products
-      const productsRef = collection(db, "businesses", businessId, "products")
-      const productDocs = await getDocs(productsRef)
-      for (const docSnap of productDocs.docs) {
-        await deleteDoc(docSnap.ref)
-      }
+      await supabase.from("products").delete().eq("business_id", businessId);
 
       // Delete transactions
-      const transactionsRef = collection(
-        db,
-        "businesses",
-        businessId,
-        "transactions"
-      )
-      const txDocs = await getDocs(transactionsRef)
-      for (const docSnap of txDocs.docs) {
-        await deleteDoc(docSnap.ref)
-      }
+      await supabase
+        .from("transactions")
+        .delete()
+        .eq("business_id", businessId);
 
-      // Delete business document
-      await deleteDoc(doc(db, "businesses", businessId))
+      // Delete business
+      await supabase.from("businesses").delete().eq("id", businessId);
 
-      // Remove businessId + role from all associated profiles
-      const profilesRef = collection(db, "profiles")
-      const q = query(profilesRef, where("businessId", "==", businessId))
-      const profilesSnap = await getDocs(q)
+      // Reset all profiles for this business
+      await supabase
+        .from("profiles")
+        .update({ business_id: null, role: "pending" })
+        .eq("business_id", businessId);
 
-      const batch = writeBatch(db)
-      profilesSnap.forEach((profileDoc) => {
-        batch.update(profileDoc.ref, {
-          businessId: null,
-          role: "pending",
-        })
-      })
-      await batch.commit()
-
-      toast.success("Business deleted successfully.")
-      navigate("/register-business")
+      toast.success("Business deleted successfully.");
+      navigate("/register-business");
     } catch (err) {
-      console.error("Failed to delete business:", err)
-      toast.error("Failed to delete business.")
+      console.error("Failed to delete business:", err);
+      toast.error("Failed to delete business.");
     }
-  }
+  };
 
   return (
     <>
@@ -162,8 +144,8 @@ const Dashboard = () => {
           <Button
             className="mt-4 bg-rose-500"
             onClick={() => {
-              setBusinessId(profile.businessId)
-              setDeleteDialogOpen(true)
+              setBusinessId(profile.businessId);
+              setDeleteDialogOpen(true);
             }}
           >
             Delete Business
@@ -209,9 +191,9 @@ const Dashboard = () => {
               disabled={confirmName !== businessName}
               onClick={async () => {
                 if (businessId) {
-                  await handleDelete(businessId)
-                  setDeleteDialogOpen(false)
-                  setBusinessId(null)
+                  await handleDelete(businessId);
+                  setDeleteDialogOpen(false);
+                  setBusinessId(null);
                 }
               }}
             >
@@ -221,7 +203,7 @@ const Dashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;

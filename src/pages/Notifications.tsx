@@ -1,24 +1,11 @@
-import { useEffect, useState } from "react"
-import { db, auth } from "@/lib/firebase"
-import {
-  collection,
-  query,
-  where,
-  // onSnapshot,
-  doc,
-  deleteDoc,
-  updateDoc,
-  getDoc,
-  Timestamp,
-  getDocs,
-  setDoc,
-} from "firebase/firestore"
-import { useAuthState } from "react-firebase-hooks/auth"
-import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
-import type { Notification } from "@/lib/types"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import type { Notification } from "@/lib/types";
+import { useNavigate } from "react-router-dom";
+import { useSupabaseAuth } from "@/hook/useSupabaseAuth";
+import { supabase } from "@/lib/supabaseClient";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -27,188 +14,153 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 
 export default function Notifications() {
-  const navigate = useNavigate()
-  const [user] = useAuthState(auth)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(true)
-  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false)
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useSupabaseAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] =
-    useState<Notification | null>(null)
+    useState<Notification | null>(null);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login")
-      toast.info("Please login to view notifications.")
-      return
+    if (!user && !authLoading) {
+      navigate("/login");
+      toast.info("Please login to view notifications.");
+      return;
     }
 
-    const checkInvitesAndLoadNotifications = async () => {
+    const fetchNotifications = async () => {
       try {
-        const inviteSnap = await getDocs(
-          query(collection(db, "invites"), where("email", "==", user.email))
-        )
+        if (!user) return;
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("to_user_id", user.id)
+          .order("created_at", { ascending: false });
 
-        const processedInviteIds = new Set<string>()
-
-        for (const inviteDoc of inviteSnap.docs) {
-          const invite = inviteDoc.data()
-          const inviteId = inviteDoc.id
-
-          if (processedInviteIds.has(inviteId)) continue
-          processedInviteIds.add(inviteId)
-
-          const existingNotifSnap = await getDocs(
-            query(
-              collection(db, "notifications"),
-              where("toUserId", "==", user.uid),
-              where("data.inviteId", "==", inviteId),
-              where("type", "==", "invite_received")
-            )
-          )
-
-          if (!existingNotifSnap.empty) continue
-
-          await setDoc(doc(db, "notifications", `invite_${inviteId}`), {
-            toUserId: user.uid,
-            type: "invite_received",
-            read: false,
-            createdAt: Timestamp.now(),
-            data: {
-              email: invite.email,
-              inviteId,
-              businessId: invite.businessId,
-              inviterId: invite.invitedBy,
-            },
-          })
-        }
-
-        const notifSnap = await getDocs(
-          query(
-            collection(db, "notifications"),
-            where("toUserId", "==", user.uid)
-          )
-        )
-
-        setNotifications(
-          notifSnap.docs.map(
-            (doc) => ({ id: doc.id, ...doc.data() } as Notification)
-          )
-        )
-      } catch (error) {
-        console.error("Failed to fetch invites or notifications", error)
-        toast.error("Error loading notifications.")
+        if (error) throw error;
+        setNotifications(data ?? []);
+      } catch (err) {
+        console.error("Error fetching notifications", err);
+        toast.error("Failed to load notifications.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    checkInvitesAndLoadNotifications()
-  }, [user?.uid])
+    if (!authLoading) fetchNotifications();
+  }, [user, authLoading, navigate]);
 
-  const handleAcceptInvite = async (notification: Notification) => {
-    if (!user) return
+  // Realtime subscription
+  useEffect(() => {
+    if (!user) return;
 
-    const { inviteId, businessId } = notification.data
-
-    try {
-      if (!inviteId) {
-        toast.error("Invite ID not found in notification data")
-        throw new Error("Invite ID not found in notification data")
-      } else if (!businessId) {
-        toast.error("Business ID not found in notification data.")
-        throw new Error("Business ID not found in notification data")
-      }
-
-      const inviteDoc = await getDoc(doc(db, "invites", inviteId))
-      if (!inviteDoc.exists()) {
-        toast.error("Invite no longer exists.")
-        return
-      }
-
-      await updateDoc(doc(db, "profiles", user.uid), {
-        businessId,
-        role: "vendor",
-      })
-
-      const updateProfile = await getDoc(doc(db, "profiles", user.uid))
-      if (!updateProfile.exists() || updateProfile.data()?.role !== "vendor") {
-        toast.error("Failed to update profile role to vendor.")
-        throw new Error("Failed to update profile role to vendor.")
-      }
-      console.log("Profile updated to vendor role successfully.")
-
-      await deleteDoc(doc(db, "invites", inviteId))
-      await deleteDoc(doc(db, "notifications", notification.id))
-
-      toast.success("Invite accepted! You've joined the business.")
-      console.log("Toast success: Invite accepted! You've joined the business.")
-      setNotificationDialogOpen(false)
-      setSelectedNotification(null)
-      setTimeout(() => {
-        navigate("/")
-      }, 1500)
-    } catch (error) {
-      console.error(error)
-      toast.error("Failed to accept invite.")
-      setNotificationDialogOpen(false)
-      setSelectedNotification(null)
-      return
-    }
-  }
-
-  const handleDeclineInvite = async (notification: Notification) => {
-    try {
-      const { inviteId, inviterId } = notification.data
-
-      if (!inviteId) {
-        toast.error("Invite ID not found in notification data")
-        throw new Error("Invite ID not found in notification data")
-      } else if (!notification.id) {
-        toast.error("Notification ID not found in notification data")
-        throw new Error("Notification ID not found in notification data")
-      }
-
-      await setDoc(
-        doc(db, "notifications", `declined_${inviterId}_${inviteId}`),
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
         {
-          toUserId: inviterId,
-          type: "invite-declined",
-          read: false,
-          createdAt: Timestamp.now(),
-          data: {
-            declinedBy: user?.email,
-          },
+          event: "*", // listen to INSERT, UPDATE, DELETE
+          schema: "public",
+          table: "notifications",
+          filter: `to_user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setNotifications((prev) => [payload.new as Notification, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setNotifications((prev) =>
+              prev.map((n) =>
+                n.id === payload.new.id ? (payload.new as Notification) : n
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setNotifications((prev) =>
+              prev.filter((n) => n.id !== payload.old.id)
+            );
+          }
         }
       )
-      await deleteDoc(doc(db, "invites", inviteId))
-      await deleteDoc(doc(db, "notifications", notification.id))
+      .subscribe();
 
-      toast.success("Invite declined.")
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+  const handleAcceptInvite = async (notification: Notification) => {
+    if (!user) return;
+    const { inviteId, businessId } = notification.data;
+
+    try {
+      if (!inviteId || !businessId) {
+        toast.error("Invalid invite data.");
+      }
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({ business_id: businessId, role: "vendor" })
+        .eq("id", user.id);
+
+      if (updateErr) throw updateErr;
+
+      await supabase.from("invites").delete().eq("id", inviteId);
+      await supabase.from("notifications").delete().eq("id", notification.id);
+
+      toast.success("Invite accepted! You've joined the business.");
+      setNotificationDialogOpen(false);
+      setSelectedNotification(null);
+      setTimeout(() => navigate("/"), 1500);
     } catch (error) {
-      console.error(error)
-      toast.error("Error declining invite.")
+      console.error(error);
+      toast.error("Failed to accept invite.");
+      setNotificationDialogOpen(false);
+      setSelectedNotification(null);
     }
-  }
+  };
 
-  if (loading) {
+  const handleDeclineInvite = async (notification: Notification) => {
+    if (!user) return;
+    const { inviteId, inviterId } = notification.data;
+
+    try {
+      if (!inviteId || !notification.id) {
+        toast.error("Invalid notification data");
+        throw new Error("Missing IDs");
+      }
+
+      await supabase.from("notifications").insert({
+        to_user_id: inviterId,
+        type: "invite_declined",
+        read: false,
+        data: { declinedBy: user.email },
+      });
+
+      await supabase.from("invites").delete().eq("id", inviteId);
+      await supabase.from("notifications").delete().eq("id", notification.id);
+
+      toast.success("Invite declined.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error declining invite.");
+    }
+  };
+  if (loading || authLoading) {
     return (
       <div className="flex justify-center items-center py-20">
-        <Loader2 className="animate-spin h-6 w-6 text-muted" />
+        <Loader2 />
       </div>
-    )
+    );
   }
 
   if (notifications.length === 0) {
     return (
       <div className="text-center py-10 text-muted-foreground">
-        No notifications
+        No Notifications
       </div>
-    )
+    );
   }
-
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Notifications</h2>
@@ -229,8 +181,8 @@ export default function Notifications() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSelectedNotification(n)
-                  setNotificationDialogOpen(true)
+                  setSelectedNotification(n);
+                  setNotificationDialogOpen(true);
                 }}
                 className="mt-2"
               >
@@ -269,8 +221,8 @@ export default function Notifications() {
             <Button
               variant="default"
               onClick={() => {
-                if (!selectedNotification) return
-                handleAcceptInvite(selectedNotification)
+                if (!selectedNotification) return;
+                handleAcceptInvite(selectedNotification);
               }}
             >
               Accept
@@ -278,8 +230,8 @@ export default function Notifications() {
             <Button
               variant="destructive"
               onClick={() => {
-                if (!selectedNotification) return
-                handleDeclineInvite(selectedNotification)
+                if (!selectedNotification) return;
+                handleDeclineInvite(selectedNotification);
               }}
             >
               Decline
@@ -289,5 +241,5 @@ export default function Notifications() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

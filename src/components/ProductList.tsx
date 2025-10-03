@@ -1,18 +1,14 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
-  collection,
-  onSnapshot,
-  updateDoc,
-  doc,
-  deleteDoc,
-} from "firebase/firestore"
-import { db } from "@/lib/firebase"
-import type { ProductProps } from "@/lib/types"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,62 +18,107 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "./ui/alert-dialog"
-import { toast } from "sonner"
-import { Label } from "./ui/label"
+} from "./ui/alert-dialog";
+import { toast } from "sonner";
+import { Label } from "./ui/label";
+import { supabase } from "@/lib/supabaseClient";
+import type { ProductProps } from "@/lib/types";
+import { Input } from "./ui/input";
 
 export default function ProductList({
   businessId,
   isOwner,
 }: {
-  businessId: string
-  isOwner: boolean
+  businessId: string;
+  isOwner: boolean;
 }) {
-  const [products, setProducts] = useState<ProductProps[]>([])
+  const [products, setProducts] = useState<ProductProps[]>([]);
   const [editing, setEditing] = useState<{
-    [key: string]: Partial<ProductProps>
-  }>({})
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [pendingSaveId, setPendingSaveId] = useState<string | null>(null)
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
+    [key: string]: Partial<ProductProps>;
+  }>({});
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (!businessId) return
+    if (!businessId) return;
 
-    const unsubscribe = onSnapshot(
-      collection(db, "businesses", businessId, "products"),
-      (snap) => {
-        const list = snap.docs.map((doc) => ({
-          uid: doc.id,
-          ...doc.data(),
-        })) as ProductProps[]
-        setProducts(list)
+    const loadProducts = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("business_id", businessId);
+
+      if (error) {
+        console.error(error);
+        toast.error("Failed to load products.");
+        return;
       }
-    )
+      setProducts(data || []);
+    };
+    loadProducts();
 
-    return () => unsubscribe()
-  }, [businessId])
+    // realtime channel
+    const channel = supabase
+      .channel(`products:${businessId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "products",
+          filter: `business_id=eq.${businessId}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setProducts((prev) => [...prev, payload.new as ProductProps]);
+          } else if (payload.eventType === "UPDATE") {
+            setProducts((prev) =>
+              prev.map((p) =>
+                p.id === payload.new.id ? (payload.new as ProductProps) : p
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setProducts((prev) => prev.filter((p) => p.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [businessId]);
 
   const handleEdit = async (id: string) => {
-    const changes = editing[id]
-    if (!changes) return
+    const changes = editing[id];
+    if (!changes) return;
 
-    await updateDoc(doc(db, "businesses", businessId, "products", id), changes)
-    setEditing((prev) => ({ ...prev, [id]: {} }))
-    toast.success("Changes Saved!")
-    setIsEditing(false)
-  }
+    const { error } = await supabase
+      .from("products")
+      .update(changes)
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      toast.error("Failed to save changes.");
+      return;
+    }
+
+    setEditing((prev) => ({ ...prev, [id]: {} }));
+    toast.success("Changes Saved!");
+    setIsEditing(false);
+  };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, "businesses", businessId, "products", id))
-    } catch (error) {
-      console.error("~ Delete error:", error)
-      toast.error("delete failed.")
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      toast.error("Failed to delete product.");
     }
-  }
+  };
 
   return (
     <div className="grid gap-4 my-6 w-full max-w-lg md:max-w-xl lg:max-w-2xl">
@@ -87,7 +128,7 @@ export default function ProductList({
         </p>
       ) : (
         products.map((product) => (
-          <div key={product.uid} className="">
+          <div key={product.id} className="">
             {isOwner ? (
               <>
                 <Card>
@@ -109,8 +150,8 @@ export default function ProductList({
                             onChange={(e) =>
                               setEditing((prev) => ({
                                 ...prev,
-                                [product.uid]: {
-                                  ...prev[product.uid],
+                                [product.id]: {
+                                  ...prev[product.id],
                                   name: e.target.value,
                                 },
                               }))
@@ -128,8 +169,8 @@ export default function ProductList({
                             onChange={(e) =>
                               setEditing((prev) => ({
                                 ...prev,
-                                [product.uid]: {
-                                  ...prev[product.uid],
+                                [product.id]: {
+                                  ...prev[product.id],
                                   price: Number(e.target.value),
                                 },
                               }))
@@ -147,8 +188,8 @@ export default function ProductList({
                             onChange={(e) =>
                               setEditing((prev) => ({
                                 ...prev,
-                                [product.uid]: {
-                                  ...prev[product.uid],
+                                [product.id]: {
+                                  ...prev[product.id],
                                   stock: Number(e.target.value),
                                 },
                               }))
@@ -190,8 +231,8 @@ export default function ProductList({
                       <Button
                         variant="outline"
                         onClick={() => {
-                          setPendingSaveId(product.uid)
-                          setEditDialogOpen(true)
+                          setPendingSaveId(product.id);
+                          setEditDialogOpen(true);
                         }}
                       >
                         Save
@@ -200,7 +241,7 @@ export default function ProductList({
                       <Button
                         variant="outline"
                         onClick={() => {
-                          setIsEditing(true)
+                          setIsEditing(true);
                         }}
                       >
                         Edit
@@ -210,7 +251,7 @@ export default function ProductList({
                       <Button
                         variant="outline"
                         onClick={() => {
-                          setIsEditing(false)
+                          setIsEditing(false);
                         }}
                       >
                         Cancel
@@ -220,8 +261,8 @@ export default function ProductList({
                         variant="outline"
                         className="text-rose-600"
                         onClick={() => {
-                          setPendingDeleteId(product.uid)
-                          setDeleteDialogOpen(true)
+                          setPendingDeleteId(product.id);
+                          setDeleteDialogOpen(true);
                         }}
                       >
                         Delete
@@ -266,9 +307,9 @@ export default function ProductList({
             <AlertDialogAction
               onClick={async () => {
                 if (pendingSaveId) {
-                  await handleEdit(pendingSaveId)
-                  setEditDialogOpen(false)
-                  setPendingSaveId(null)
+                  await handleEdit(pendingSaveId);
+                  setEditDialogOpen(false);
+                  setPendingSaveId(null);
                 }
               }}
             >
@@ -291,9 +332,9 @@ export default function ProductList({
             <AlertDialogAction
               onClick={async () => {
                 if (pendingDeleteId) {
-                  await handleDelete(pendingDeleteId)
-                  setDeleteDialogOpen(false)
-                  setPendingDeleteId(null)
+                  await handleDelete(pendingDeleteId);
+                  setDeleteDialogOpen(false);
+                  setPendingDeleteId(null);
                 }
               }}
             >
@@ -303,5 +344,5 @@ export default function ProductList({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }
