@@ -1,36 +1,52 @@
-"use client"
+"use client";
 
-import { useAuthState } from "react-firebase-hooks/auth"
-import { doc, getDoc } from "firebase/firestore"
-import { useEffect, useState } from "react"
-import { auth, db } from "@/lib/firebase"
-import type { ProfileProps } from "@/lib/types"
-import AddProduct from "@/components/AddProduct"
-import ProductList from "@/components/ProductList"
+import { useEffect, useState } from "react";
+import type { ProfileProps } from "@/lib/types";
+import AddProduct from "@/components/AddProduct";
+import ProductList from "@/components/ProductList";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
   CardDescription,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
+import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
+import type { User } from "@supabase/supabase-js";
 
 export default function ProductsPage() {
-  const [user] = useAuthState(auth)
-  const [profile, setProfile] = useState<ProfileProps | null>(null)
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<ProfileProps | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return
-      const snap = await getDoc(doc(db, "profiles", user.uid))
-      const data = snap.data() as ProfileProps
-      setProfile(data)
-    }
+    const fetchUserAndProfile = async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) return;
 
-    fetchProfile()
-  }, [user])
+      setUser(user);
 
-  if (!profile) return <p>Loading...</p>
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error(error);
+        toast.error("Failed to load profile.");
+        return;
+      }
+      setProfile(data as ProfileProps);
+    };
+
+    fetchUserAndProfile();
+  }, []);
+
+  if (!profile) return <p>Loading...</p>;
 
   return (
     <div className="py-6 flex flex-col items-center">
@@ -55,5 +71,5 @@ export default function ProductsPage() {
         isOwner={profile.role === "owner"}
       />
     </div>
-  )
+  );
 }

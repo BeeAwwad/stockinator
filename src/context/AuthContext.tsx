@@ -28,12 +28,13 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
 
   const signUpNewUser = async (email: string, password: string) => {
+    console.log("data:", email, password);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
     if (error) {
-      console.error("Error signing up:", error.message);
+      console.error("Error signing up:", error);
       toast.error(error.message);
       return { success: false, error: error.message };
     }

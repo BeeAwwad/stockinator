@@ -22,12 +22,21 @@ const loginSchema = z
   .object({
     email: z.string().email(),
     password: z.string().min(6),
-    confirmPassword: z.string().optional(),
+    confirmPassword: z.string().optional().or(z.literal("")),
     mode: z.enum(["login", "signup"]),
   })
   .refine(
     (data) => data.mode === "login" || data.password === data.confirmPassword,
     { path: ["confirmPassword"], message: "Passwords do not match" }
+  )
+  .refine(
+    (data) => {
+      if (data.mode === "signup" && !data.confirmPassword) {
+        return false;
+      }
+      return true;
+    },
+    { path: ["confirmPassword"], message: "Please confirm your password" }
   );
 
 type FormData = z.infer<typeof loginSchema>;
@@ -36,7 +45,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { signInUser, signUpNewUser, session } = UserAuth();
+  const { signInUser, signUpNewUser } = UserAuth();
 
   const form = useForm<FormData>({
     resolver: zodResolver(loginSchema),
@@ -57,17 +66,21 @@ const Login = () => {
   const mode = watch("mode");
 
   const onSubmit = async (data: FormData) => {
+    console.log("Onsubmit is running:", data.mode, data.email, data.password);
     try {
       setLoading(true);
       if (data.mode === "signup") {
         const result = await signUpNewUser(data.email, data.password);
         if (result.success) {
           navigate("/notification");
+        } else {
+          console.error("couldn't sign up. success:", result.success);
+          toast.error("Sorry we couldn't sign you up.");
         }
       } else {
         const result = await signInUser(data.email, data.password);
         if (result.success) {
-          navigate("/notification");
+          navigate("/notifications");
         }
       }
     } catch (error) {

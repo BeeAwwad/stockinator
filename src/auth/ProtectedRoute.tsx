@@ -1,14 +1,13 @@
-import { useAuthState } from "react-firebase-hooks/auth"
-import { auth } from "../lib/firebase"
-import { Navigate } from "react-router-dom"
+import { Navigate } from "react-router-dom";
+import { useSupabaseAuth } from "@/hook/useSupabaseAuth";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [user, loading] = useAuthState(auth)
+  const { user, loading } = useSupabaseAuth();
 
-  if (loading) return <div>Loading...</div>
-  if (!user) return <Navigate to="/login" />
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <Navigate to="/login" />;
 
-  return <>{children}</>
-}
+  return <>{children}</>;
+};
 
-export default ProtectedRoute
+export default ProtectedRoute;
