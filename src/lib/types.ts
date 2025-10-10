@@ -1,7 +1,7 @@
 export type ProfileProps = {
   id: string;
   businessId: string;
-  role: "owner" | "vendor" | "pending";
+  role: "owner" | "vendor" | "unassigned";
   invitedEmail?: string;
   email: string;
   displayName?: string;
@@ -43,7 +43,7 @@ export type PendingInvite = {
   businessId: string;
   invitedBy: string;
   createdAt: string;
-  role: "vendor" | "pending" | "owner";
+  role: "vendor" | "unassigned" | "owner";
 };
 
 export type Notification = {

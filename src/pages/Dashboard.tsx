@@ -83,7 +83,7 @@ const Dashboard = () => {
       // Reset all profiles for this business
       await supabase
         .from("profiles")
-        .update({ business_id: null, role: "pending" })
+        .update({ business_id: null, role: "unassigned" })
         .eq("business_id", businessId);
 
       toast.success("Business deleted successfully.");
@@ -109,15 +109,17 @@ const Dashboard = () => {
                 <span className="font-semibold">{businessName}</span>
               </p>
             ) : (
-              <p className="mt-2 text-gray-500">Loading business name...</p>
-            )}
-
-            {profile.role === null && (
-              <p className="text-yellow-600">
-                Create a business first.
-                <Link to="/create-business" className="hover:underline">
-                  Create Business
-                </Link>
+              <p className="mt-2 text-balance text-gray-500">
+                <Link to={"/notifications"}>
+                  <span className="text-amber-500 hover:underline">Join</span>
+                </Link>{" "}
+                or{" "}
+                <Link to={"/register-business"}>
+                  <span className="text-emerald-600 hover:underline">
+                    Create
+                  </span>
+                </Link>{" "}
+                a business to see more from the dashboard
               </p>
             )}
             {profile.role === "owner" && (

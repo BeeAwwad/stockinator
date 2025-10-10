@@ -49,6 +49,12 @@ const CreateBusiness = () => {
     setLoading(true);
 
     try {
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      console.log("Current user before insert:", currentUser);
+
       const { data: business, error: bizErr } = await supabase
         .from("businesses")
         .insert({
@@ -59,7 +65,7 @@ const CreateBusiness = () => {
         .single();
 
       if (bizErr) throw bizErr;
-
+      console.log("before updating profile...");
       const { error: profileErr } = await supabase
         .from("profiles")
         .update({

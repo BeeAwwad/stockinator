@@ -126,7 +126,7 @@ const VendorList = () => {
       if (type === "vendor") {
         await supabase
           .from("profiles")
-          .update({ business_id: null, role: "pending" })
+          .update({ business_id: null, role: "unassigned" })
           .eq("id", id);
         toast.success("Vendor removed.");
       } else {
@@ -141,8 +141,8 @@ const VendorList = () => {
     }
   };
 
-  if (loading) return <p>Loading vendors...</p>;
   if (!businessId) return null;
+  if (loading) return <p>Loading vendors...</p>;
 
   return (
     <div className="mt-6">
