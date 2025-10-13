@@ -16,22 +16,27 @@ export default function AddProduct({
   isOwner: boolean;
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
+  console.log("businessId:", businessId);
   const generateSKU = (name: string) =>
     `${name.slice(0, 3).toLocaleUpperCase()}-${Date.now()
       .toString()
       .slice(-5)}`;
 
   const handleSubmit = async () => {
+    console.log("handleSubmit...");
     const { name, price, stock } = form;
-    if (!businessId || !isOwner) return;
+    console.log("name:", name, "price:", price, "stock:", stock);
+    if (!businessId || !isOwner) {
+      console.log("!businessId:", businessId, "!isOwner:", isOwner);
+      return;
+    }
 
     const sku = generateSKU(form.name);
-
+    console.log("sku:", sku);
+    console.log("inserting product...");
     const { error } = await supabase.from("products").insert([
       {
         business_id: businessId,
@@ -41,7 +46,7 @@ export default function AddProduct({
         stock: Number(stock),
       },
     ]);
-
+    console.log("insert completed");
     if (error) {
       console.error("Failed to add product:", error);
       toast.error("Failed to add product. Please try again.");

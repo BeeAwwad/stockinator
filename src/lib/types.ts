@@ -1,8 +1,7 @@
 export type ProfileProps = {
   id: string;
-  businessId: string;
+  business_id: string;
   role: "owner" | "vendor" | "unassigned";
-  invitedEmail?: string;
   email: string;
   displayName?: string;
   createdAt: Date;

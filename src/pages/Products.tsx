@@ -48,6 +48,7 @@ export default function ProductsPage() {
 
   if (!profile) return <p>Loading...</p>;
 
+  console.log("profile:", profile);
   return (
     <div className="py-6 flex flex-col items-center">
       {profile.role === "owner" && (
@@ -61,13 +62,13 @@ export default function ProductsPage() {
           <CardContent>
             <AddProduct
               isOwner={profile.role === "owner"}
-              businessId={profile.businessId}
+              businessId={profile.business_id}
             />
           </CardContent>
         </Card>
       )}
       <ProductList
-        businessId={profile.businessId}
+        businessId={profile.business_id}
         isOwner={profile.role === "owner"}
       />
     </div>
