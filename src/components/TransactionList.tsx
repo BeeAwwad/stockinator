@@ -40,7 +40,7 @@ export default function TransactionList({
   useEffect(() => {
     if (!businessId) return;
 
-    const fetchTransactions = async () => {
+    const loadTransactions = async () => {
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
@@ -55,7 +55,7 @@ export default function TransactionList({
       setTransactions(data as Transaction[]);
     };
 
-    fetchTransactions();
+    loadTransactions();
 
     const channel = supabase
       .channel(`transactions-${businessId}`)
@@ -69,7 +69,19 @@ export default function TransactionList({
         },
         (payload) => {
           console.log("Realtime transaction change:", payload);
-          fetchTransactions();
+          if (payload.eventType === "INSERT") {
+            setTransactions((prev) => [payload.new as Transaction, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setTransactions((prev) =>
+              prev.map((tx) =>
+                tx.id === payload.new.id ? (payload.new as Transaction) : tx
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setTransactions((prev) =>
+              prev.filter((tx) => tx.id !== payload.old.id)
+            );
+          }
         }
       )
       .subscribe();
@@ -81,17 +93,26 @@ export default function TransactionList({
 
   const handleVerify = async (transactionId: string) => {
     if (!isOwner) return;
+    setTransactions((prev) =>
+      prev.map((tx) =>
+        tx.id === transactionId ? { ...tx, verified: true } : tx
+      )
+    );
     const { error } = await supabase
-      .from("transaction")
+      .from("transactions")
       .update({
         verified: true,
-        verified_at: new Date().toISOString(),
       })
       .eq("id", transactionId);
-
+    console.log("after verifying...");
     if (error) {
       console.error(error);
       toast.error("Failed to verify transaction");
+      setTransactions((prev) =>
+        prev.map((tx) =>
+          tx.id === transactionId ? { ...tx, verified: false } : tx
+        )
+      );
       return;
     }
     toast.success("Transaction verified");
@@ -99,13 +120,20 @@ export default function TransactionList({
 
   const handleDelete = async (transactionId: string) => {
     if (!isOwner) return;
+    const deletedTx = transactions.find((t) => t.id === transactionId);
+    setTransactions((prev) => prev.filter((tx) => tx.id !== transactionId));
+
     const { error } = await supabase
       .from("transactions")
       .delete()
       .eq("id", transactionId);
-
     if (error) {
       console.error("Failed to delete transaction");
+      toast.error("Failed to delete transaction");
+
+      if (deletedTx) {
+        setTransactions((prev) => [...prev, deletedTx]);
+      }
       return;
     }
 
@@ -166,8 +194,10 @@ export default function TransactionList({
                     {new Date(tx.created_at).toLocaleDateString()}
                   </span>
                 </p>
-                {tx.verified && (
-                  <p className="text-sm flex text-emerald-500">Verified</p>
+                {tx.verified === true ? (
+                  <p className="text-sm flex text-emerald-500">verified</p>
+                ) : (
+                  <p>not verified</p>
                 )}
               </CardContent>
               <CardFooter className="flex justify-between">
@@ -188,6 +218,7 @@ export default function TransactionList({
 
                     <Button
                       variant={"secondary"}
+                      disabled={tx.verified}
                       onClick={() => {
                         setPendingVerifyId(tx.id);
                         setVerifyDialogOpen(true);

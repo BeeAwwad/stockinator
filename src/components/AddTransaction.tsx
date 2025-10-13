@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm, Controller } from "react-hook-form";
-import type { ProductProps, TransactionProps } from "@/lib/types";
+import type { ProductProps } from "@/lib/types";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { transactionSchema } from "@/lib/schemas";
@@ -29,12 +29,10 @@ type TransactionFormProps = z.infer<typeof transactionSchema>;
 
 export default function AddTransaction({
   products,
-  onSubmit,
   businessId,
   createdBy,
 }: {
   products: ProductProps[];
-  onSubmit: (data: TransactionProps) => void;
   businessId: string;
   createdBy: string;
 }) {
@@ -93,7 +91,6 @@ export default function AddTransaction({
       return;
     }
     const product = products.find((p) => p.id === data.productId);
-    const total = product ? product.price * data.amount : 0;
 
     if (!businessId) {
       toast.error("Missing business context.");
@@ -108,6 +105,24 @@ export default function AddTransaction({
 
     if (duplicate) {
       toast.warning("Duplicate transaction detected in the last 2 minutes.");
+      return;
+    }
+
+    if (product && typeof product.stock === "number") {
+      const { error: updateError } = await supabase
+        .from("products")
+        .update({
+          stock: product.stock - data.amount,
+        })
+        .eq("id", product.id);
+
+      if (updateError) {
+        console.error("Stock update failed:", updateError);
+        toast.error("Failed to update product stock.");
+        return;
+      }
+    } else {
+      toast.error("Selected product not found or stock is invalid.");
       return;
     }
 
@@ -126,7 +141,6 @@ export default function AddTransaction({
     }
 
     toast.success("Transaction created!");
-    await onSubmit({ ...data, total, verified: false });
     setLastSubmitted(now.getTime());
     setPrice("");
     setTotal("");
