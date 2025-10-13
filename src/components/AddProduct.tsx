@@ -19,7 +19,6 @@ export default function AddProduct({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-  console.log("businessId:", businessId);
   const generateSKU = (name: string) =>
     `${name.slice(0, 3).toLocaleUpperCase()}-${Date.now()
       .toString()
@@ -28,15 +27,12 @@ export default function AddProduct({
   const handleSubmit = async () => {
     console.log("handleSubmit...");
     const { name, price, stock } = form;
-    console.log("name:", name, "price:", price, "stock:", stock);
     if (!businessId || !isOwner) {
       console.log("!businessId:", businessId, "!isOwner:", isOwner);
       return;
     }
 
     const sku = generateSKU(form.name);
-    console.log("sku:", sku);
-    console.log("inserting product...");
     const { error } = await supabase.from("products").insert([
       {
         business_id: businessId,

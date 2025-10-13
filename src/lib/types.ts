@@ -17,7 +17,7 @@ export type ProductProps = {
 
 export type TransactionProps = {
   productId: string;
-  quantity: number;
+  amount: number;
   total: number;
   createdBy: string;
   createdAt: Date;
@@ -26,14 +26,12 @@ export type TransactionProps = {
 
 export type Transaction = {
   id: string;
-  productId: string;
-  quantity: number;
+  product_id: string;
+  amount: number;
   total: number;
-  createdBy: string;
-  createdAt: Date;
+  created_by: string;
+  created_at: Date;
   verified: boolean;
-  verifiedAt?: Date;
-  verifiedBy?: string;
 };
 
 export type PendingInvite = {

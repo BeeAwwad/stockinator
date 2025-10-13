@@ -46,7 +46,7 @@ export default function Transaction() {
       const { productId, quantity, total } = data;
       const qty = Number(quantity);
 
-      if (!profile?.businessId || !productId || !qty) return;
+      if (!profile?.business_id || !productId || !qty) return;
 
       // 1. Fetch product
       const { data: product, error: productError } = await supabase
@@ -83,7 +83,7 @@ export default function Transaction() {
       const { error: insertError } = await supabase
         .from("transactions")
         .insert({
-          business_id: profile.businessId,
+          business_id: profile.business_id,
           product_id: productId,
           quantity: qty,
           total,
@@ -115,11 +115,11 @@ export default function Transaction() {
       <AddTransaction
         products={products}
         onSubmit={createTransaction}
-        businessId={profile.businessId}
+        businessId={profile.business_id}
         createdBy={user?.email || "Unknown"}
       />
       <TransactionList
-        businessId={profile.businessId}
+        businessId={profile.business_id}
         isOwner={profile.role === "owner"}
         products={products}
       />

@@ -50,8 +50,7 @@ export default function AddTransaction({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       productId: "",
-      quantity: 0,
-      total: 0,
+      amount: 0,
       createdBy: createdBy,
       createdAt: new Date(),
     },
@@ -94,7 +93,7 @@ export default function AddTransaction({
       return;
     }
     const product = products.find((p) => p.id === data.productId);
-    const total = product ? product.price * data.quantity : 0;
+    const total = product ? product.price * data.amount : 0;
 
     if (!businessId) {
       toast.error("Missing business context.");
@@ -115,8 +114,7 @@ export default function AddTransaction({
     const { error } = await supabase.from("transactions").insert({
       business_id: businessId,
       product_id: data.productId,
-      quantity: data.quantity,
-      total,
+      amount: data.amount,
       created_by: createdBy,
       verified: false,
     });
@@ -165,11 +163,11 @@ export default function AddTransaction({
                       (product) => product.id === value
                     );
                     const productPrice = selected?.price ?? 0;
-                    const quantity = getValues("quantity") || 0;
+                    const amount = getValues("amount") || 0;
 
                     setPrice(productPrice.toString());
-                    setTotal((productPrice * quantity).toFixed(2));
-                    setValue("total", productPrice * quantity);
+                    setTotal((productPrice * amount).toFixed(2));
+                    setValue("total", productPrice * amount);
                     field.onChange(value);
                   }}
                   value={getValues().productId}
@@ -196,26 +194,26 @@ export default function AddTransaction({
 
           <Input
             type="number"
-            placeholder="Quantity"
-            {...register("quantity", {
+            placeholder="amount"
+            {...register("amount", {
               valueAsNumber: true,
               required: true,
 
               onChange: (e) => {
-                const quantity = Number(e.target.value);
+                const amount = Number(e.target.value);
                 const product = products.find(
                   (p) => p.id === getValues("productId")
                 );
                 const productPrice = product?.price ?? 0;
 
-                const newTotal = productPrice * quantity;
+                const newTotal = productPrice * amount;
                 setTotal(newTotal.toFixed(2));
                 setValue("total", newTotal);
               },
             })}
           />
-          {errors.quantity && (
-            <p className="text-sm text-rose-500">Quantity required</p>
+          {errors.amount && (
+            <p className="text-sm text-rose-500">Amount required</p>
           )}
           {price !== "" ? (
             <>

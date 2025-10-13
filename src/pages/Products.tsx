@@ -48,7 +48,6 @@ export default function ProductsPage() {
 
   if (!profile) return <p>Loading...</p>;
 
-  console.log("profile:", profile);
   return (
     <div className="py-6 flex flex-col items-center">
       {profile.role === "owner" && (

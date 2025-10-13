@@ -121,7 +121,7 @@ export default function TransactionList({
           </p>
         )}
         {transactions.map((tx, i) => {
-          const product = products.find((p) => p.id === tx.productId);
+          const product = products.find((p) => p.id === tx.product_id);
           return (
             <Card key={`${tx.id} ~ ${i}`}>
               <CardHeader className="flex justify-between items-center border-b">
@@ -135,7 +135,7 @@ export default function TransactionList({
                   <span className="text-muted-foreground w-20 mr-1">
                     Quantity:{" "}
                   </span>
-                  {tx.quantity} unit{tx.quantity > 1 ? "s" : ""} of
+                  {tx.amount} unit{tx.amount > 1 ? "s" : ""} of
                   <span className="ml-1">
                     {product?.name ?? " Unknown Product"}
                   </span>
@@ -144,40 +144,30 @@ export default function TransactionList({
                   <span className="text-muted-foreground w-20 mr-1">
                     Total:{" "}
                   </span>
-                  <span>₦{tx.total.toFixed(2)}</span>
+                  <span>
+                    {product
+                      ? `₦${(tx.amount * product.price).toFixed(2)}`
+                      : "Unknown"}
+                  </span>
                 </p>
                 <p className="text-sm lg:text-base flex">
                   <span className="text-muted-foreground w-20 mr-1">
                     Added by:{" "}
                   </span>
                   <span className="text-gray-950">
-                    {tx.createdBy || "Unknown"}
+                    {tx.created_by || "Unknown"}
                   </span>
-                </p>
-                <p className="text-sm flex">
-                  <span className="text-muted-foreground w-20 mr-1">
-                    Verified by:{" "}
-                  </span>
-                  <span>{tx.verifiedBy || "Not Verified"}</span>
                 </p>
                 <p className="text-sm flex">
                   <span className="text-muted-foreground w-20  mr-1">
                     Created at:{" "}
                   </span>
                   <span className="text-gray-950">
-                    {new Date(tx.createdAt).toLocaleDateString()}
+                    {new Date(tx.created_at).toLocaleDateString()}
                   </span>
                 </p>
                 {tx.verified && (
-                  <p className="text-sm flex">
-                    <span className="text-muted-foreground w-20 mr-1">
-                      Verified at:{" "}
-                    </span>
-                    <span className="text-emerald-500">
-                      {tx.verifiedAt &&
-                        new Date(tx.verifiedAt).toLocaleString()}
-                    </span>
-                  </p>
+                  <p className="text-sm flex text-emerald-500">Verified</p>
                 )}
               </CardContent>
               <CardFooter className="flex justify-between">

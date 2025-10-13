@@ -36,6 +36,7 @@ export default function ProductList({
   const [editing, setEditing] = useState<{
     [key: string]: Partial<ProductProps>;
   }>({});
+  console.log("editing", editing);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
@@ -50,7 +51,6 @@ export default function ProductList({
         .from("products")
         .select("*")
         .eq("business_id", businessId);
-
       if (error) {
         console.error(error);
         toast.error("Failed to load products.");
