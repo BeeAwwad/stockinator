@@ -126,7 +126,7 @@ const Dashboard = () => {
               <>
                 <p>
                   User:{" "}
-                  <span className="font-semibold">{profile.displayName}</span>
+                  <span className="font-semibold">{profile.display_name}</span>
                 </p>
                 <p>You are the owner of this business.</p>
               </>
@@ -135,7 +135,7 @@ const Dashboard = () => {
               <>
                 <p>
                   User:{" "}
-                  <span className="font-semibold">{profile.displayName}</span>
+                  <span className="font-semibold">{profile.display_name}</span>
                 </p>
                 <p>You are a vendor for this business.</p>
               </>
@@ -146,7 +146,7 @@ const Dashboard = () => {
           <Button
             className="mt-4 bg-rose-500"
             onClick={() => {
-              setBusinessId(profile.businessId);
+              setBusinessId(profile.business_id);
               setDeleteDialogOpen(true);
             }}
           >

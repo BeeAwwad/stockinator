@@ -12,11 +12,9 @@ import {
   AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
-import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 
 const VendorList = () => {
-  const [user, setUser] = useState<User | null>(null);
   const [vendors, setVendors] = useState<ProfileProps[]>([]);
   const [invites, setInvites] = useState<{ id: string; email: string }[]>([]);
   const [isOwner, setIsOwner] = useState(false);
@@ -31,7 +29,6 @@ const VendorList = () => {
     const loadUserAndProfile = async () => {
       const { data } = await supabase.auth.getUser();
       if (!data.user) return;
-      setUser(data.user);
 
       // fetch profile
       const { data: profile } = await supabase
@@ -157,7 +154,7 @@ const VendorList = () => {
               key={v.id}
               className="flex justify-between items-center bg-green-50 p-2 rounded"
             >
-              <div>{v.displayName || v.email || `Vendor ${i + 1}`}</div>
+              <div>{v.display_name || v.email || `Vendor ${i + 1}`}</div>
               {isOwner && (
                 <Button
                   variant="ghost"

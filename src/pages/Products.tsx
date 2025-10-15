@@ -13,10 +13,8 @@ import {
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
-import type { User } from "@supabase/supabase-js";
 
 export default function ProductsPage() {
-  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileProps | null>(null);
 
   useEffect(() => {
@@ -26,8 +24,6 @@ export default function ProductsPage() {
         error: userError,
       } = await supabase.auth.getUser();
       if (userError || !user) return;
-
-      setUser(user);
 
       const { data, error } = await supabase
         .from("profiles")

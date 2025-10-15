@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { nanoid } from "nanoid";
 import {
   Card,
   CardContent,
@@ -11,31 +10,42 @@ import {
 } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
+import type { ProfileProps } from "@/lib/types";
 
 const AddVendor = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<ProfileProps | null>(null);
   const [email, setEmail] = useState("");
   const [vendorCount, setVendorCount] = useState(0);
   const [businessId, setBusinessId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-
     const loadProfileAndCount = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) return;
-      setUser(data.user);
+      console.log("fetching user data...");
 
-      const { data: profile } = await supabase
+      const { error: userError, data } = await supabase.auth.getUser();
+      console.log("data:", data);
+      if (userError) {
+        console.error("User Error: ", userError);
+        toast.error("Couldn't find user");
+        return;
+      }
+
+      const { error: profileError, data: profile } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", data.user.id)
         .single();
 
+      if (profileError) {
+        console.error("Profile not found: ", profileError);
+        toast.error("Couldn't find profile");
+        return;
+      }
+
       if (profile?.role !== "owner") return;
       setBusinessId(profile.business_id);
+      setProfile(profile);
 
       const channel = supabase
         .channel("addvendor-realtime")
@@ -50,7 +60,7 @@ const AddVendor = () => {
           async () => {
             const { count } = await supabase
               .from("invites")
-              .select("*", { count: "exact", head: true })
+              .select("", { count: "exact", head: true })
               .eq("business_id", profile.business_id)
               .eq("role", "vendor");
 
@@ -58,13 +68,6 @@ const AddVendor = () => {
           }
         )
         .subscribe();
-
-      const { count } = await supabase
-        .from("invites")
-        .select("*", { count: "exact", head: true })
-        .eq("business_id", profile.business_id)
-        .eq("role", "vendor");
-      setVendorCount(count || 0);
 
       return () => {
         supabase.removeChannel(channel);
@@ -84,15 +87,16 @@ const AddVendor = () => {
     }
 
     try {
-      const inviteId = nanoid();
-      await supabase.from("invites").insert({
-        id: inviteId,
+      const { error } = await supabase.from("invites").insert({
         email: vendorEmail,
         business_id: businessId,
-        invitedBy: user?.id,
-        createdAt: new Date().toISOString(),
+        invited_by: profile?.id,
       });
-
+      if (error) {
+        console.log("Failed to invite vendor: ", error);
+        toast.error("Failed to invite vendor. Please try again.");
+        return;
+      }
       setEmail("");
       toast.success("Vendor invited successfully!");
     } catch (err) {
@@ -108,7 +112,7 @@ const AddVendor = () => {
       <Card className="w-full max-w-sm md:max-w-lg lg:max-w-xl">
         <CardHeader>
           <CardTitle>Invite Vendor</CardTitle>
-          <CardDescription>Vondors invited: {vendorCount}/2</CardDescription>
+          <CardDescription>Vendors invited: {vendorCount}/2</CardDescription>
         </CardHeader>
         <CardContent>
           <Input

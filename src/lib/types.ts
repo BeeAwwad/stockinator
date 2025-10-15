@@ -3,8 +3,8 @@ export type ProfileProps = {
   business_id: string;
   role: "owner" | "vendor" | "unassigned";
   email: string;
-  displayName?: string;
-  createdAt: Date;
+  display_name?: string;
+  created_at: Date;
 };
 export type ProductProps = {
   id: string;
@@ -12,15 +12,15 @@ export type ProductProps = {
   sku: string;
   price: number;
   stock: number;
-  createdAt: Date;
+  created_at: Date;
 };
 
 export type TransactionProps = {
-  productId: string;
+  product_id: string;
   amount: number;
   total: number;
-  createdBy: string;
-  createdAt: Date;
+  created_by: string;
+  created_at: Date;
   verified: boolean;
 };
 
@@ -37,23 +37,23 @@ export type Transaction = {
 export type PendingInvite = {
   id: string;
   email: string | null;
-  businessId: string;
-  invitedBy: string;
-  createdAt: string;
+  business_id: string;
+  invited_by: string;
+  created_at: string;
   role: "vendor" | "unassigned" | "owner";
 };
 
 export type Notification = {
   id: string;
   type: string;
-  toUserId: string;
+  to_user_id: string;
   read: boolean;
-  createdAt: Date;
+  created_at: Date;
   data: {
     email?: string;
-    inviteId?: string;
-    inviterId?: string;
-    businessId?: string;
-    declinedBy?: string;
+    invite_id?: string;
+    inviter_id?: string;
+    business_id?: string;
+    declined_by?: string;
   };
 };
