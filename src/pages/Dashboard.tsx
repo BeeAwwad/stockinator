@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ProfileProps } from "@/lib/types";
-import AddVendor from "@/components/AddVendor";
+import InviteVendor from "@/components/InviteVendors";
 import VendorList from "@/components/VendorList";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -155,7 +155,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      <AddVendor />
+      <InviteVendor />
       <VendorList />
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

@@ -13,70 +13,85 @@ import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import type { ProfileProps } from "@/lib/types";
 
-const AddVendor = () => {
+const InviteVendor = () => {
   const [profile, setProfile] = useState<ProfileProps | null>(null);
   const [email, setEmail] = useState("");
   const [vendorCount, setVendorCount] = useState(0);
   const [businessId, setBusinessId] = useState<string | null>(null);
 
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     const loadProfileAndCount = async () => {
       console.log("fetching user data...");
 
-      const { error: userError, data } = await supabase.auth.getUser();
-      console.log("data:", data);
-      if (userError) {
-        console.error("User Error: ", userError);
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
+      if (userError || !userData.user) {
         toast.error("Couldn't find user");
         return;
       }
 
-      const { error: profileError, data: profile } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", data.user.id)
+        .eq("id", userData.user.id)
         .single();
 
-      if (profileError) {
-        console.error("Profile not found: ", profileError);
+      if (profileError || !profileData) {
         toast.error("Couldn't find profile");
         return;
       }
 
-      if (profile?.role !== "owner") return;
-      setBusinessId(profile.business_id);
-      setProfile(profile);
+      if (profileData.role !== "owner") return;
 
-      const channel = supabase
-        .channel("addvendor-realtime")
+      setProfile(profileData);
+      setBusinessId(profileData.business_id);
+
+      // Fetch initial count
+      const { count, error: countError } = await supabase
+        .from("invites")
+        .select("*", { count: "exact", head: true })
+        .eq("business_id", profileData.business_id);
+
+      if (countError) {
+        console.error("Error fetching invite count:", countError);
+      } else {
+        console.log("Initial invite count:", count);
+        setVendorCount(count || 0);
+      }
+
+      // Subscribe to realtime changes AFTER count is fetched
+      channel = supabase
+        .channel("vendor-invite-realtime")
         .on(
           "postgres_changes",
           {
             event: "*",
             schema: "public",
             table: "invites",
-            filter: `business_id=eq.${profile.business_id}`,
+            filter: `business_id=eq.${profileData.business_id}`,
           },
           async () => {
-            const { count } = await supabase
+            const { count, error } = await supabase
               .from("invites")
-              .select("", { count: "exact", head: true })
-              .eq("business_id", profile.business_id)
-              .eq("role", "vendor");
+              .select("*", { count: "exact", head: true })
+              .eq("business_id", profileData.business_id);
 
-            setVendorCount(count || 0);
+            if (!error) setVendorCount(count || 0);
           }
         )
         .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     };
+
     loadProfileAndCount();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
-  const handleAddVendor = async () => {
+  const handleInviteVendor = async () => {
     const vendorEmail = email.trim().toLowerCase();
 
     if (!vendorEmail || !businessId) return;
@@ -87,14 +102,30 @@ const AddVendor = () => {
     }
 
     try {
+      const { data: vendorProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", vendorEmail)
+        .single();
+
+      if (profileError || !vendorProfile) {
+        toast.error("User with email doesn't exist.");
+        return;
+      }
+
       const { error } = await supabase.from("invites").insert({
-        email: vendorEmail,
+        invited_user_id: vendorProfile.id,
         business_id: businessId,
         invited_by: profile?.id,
       });
+
       if (error) {
-        console.log("Failed to invite vendor: ", error);
-        toast.error("Failed to invite vendor. Please try again.");
+        if (error.code === "23505") {
+          toast.error("This user has already been invited");
+        } else {
+          console.log("Failed to invite vendor: ", error);
+          toast.error("Failed to invite vendor. Please try again.");
+        }
         return;
       }
       setEmail("");
@@ -125,7 +156,7 @@ const AddVendor = () => {
         <CardFooter>
           <Button
             className="w-full"
-            onClick={handleAddVendor}
+            onClick={handleInviteVendor}
             disabled={!email || vendorCount >= 2}
           >
             Add Vendor
@@ -136,4 +167,4 @@ const AddVendor = () => {
   );
 };
 
-export default AddVendor;
+export default InviteVendor;

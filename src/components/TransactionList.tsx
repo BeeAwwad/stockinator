@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import type { ProductProps, Transaction } from "@/lib/types";
+import type { ProductProps, TransactionProps } from "@/lib/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +31,7 @@ export default function TransactionList({
   isOwner: boolean;
   products: ProductProps[];
 }) {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<TransactionProps[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
@@ -52,7 +52,7 @@ export default function TransactionList({
         toast.error("Failed to load transactions");
         return;
       }
-      setTransactions(data as Transaction[]);
+      setTransactions(data as TransactionProps[]);
     };
 
     loadTransactions();
@@ -70,11 +70,16 @@ export default function TransactionList({
         (payload) => {
           console.log("Realtime transaction change:", payload);
           if (payload.eventType === "INSERT") {
-            setTransactions((prev) => [payload.new as Transaction, ...prev]);
+            setTransactions((prev) => [
+              payload.new as TransactionProps,
+              ...prev,
+            ]);
           } else if (payload.eventType === "UPDATE") {
             setTransactions((prev) =>
               prev.map((tx) =>
-                tx.id === payload.new.id ? (payload.new as Transaction) : tx
+                tx.id === payload.new.id
+                  ? (payload.new as TransactionProps)
+                  : tx
               )
             );
           } else if (payload.eventType === "DELETE") {
