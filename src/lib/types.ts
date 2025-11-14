@@ -35,4 +35,7 @@ export type InviteProps = {
   inviter?: {
     email: string;
   };
+  invited?: {
+    email: string;
+  };
 };

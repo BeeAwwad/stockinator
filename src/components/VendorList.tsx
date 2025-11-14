@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { ProfileProps } from "@/lib/types";
+import type { ProfileProps, InviteProps } from "@/lib/types";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -13,10 +13,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hook/useAuth";
 
 const VendorList = () => {
   const [vendors, setVendors] = useState<ProfileProps[]>([]);
-  const [invites, setInvites] = useState<{ id: string; email: string }[]>([]);
+  const [invites, setInvites] = useState<InviteProps[]>([]);
   const [isOwner, setIsOwner] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
@@ -24,39 +25,32 @@ const VendorList = () => {
     type: "vendor" | "invite";
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const { profile } = useAuth();
+  console.log("businessId", businessId);
 
   useEffect(() => {
-    const loadUserAndProfile = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) return;
-
-      // fetch profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", data.user.id)
-        .single();
-
-      if (!profile?.businessId) return;
-
-      setBusinessId(profile.businessId);
+    const loadVendors = async () => {
+      if (!profile) return;
+      setBusinessId(profile.business_id);
       setIsOwner(profile.role === "owner");
 
-      // fetch vendors
-      const { data: vendorList } = await supabase
+      const { error: vendorErr, data: vendorList } = await supabase
         .from("profiles")
         .select("*")
-        .eq("businessId", profile.businessId)
+        .eq("businessId", profile.business_id)
         .eq("role", "vendor");
       setVendors(vendorList || []);
 
+      if (vendorErr) throw vendorErr;
       // fetch invites
-      const { data: inviteList } = await supabase
+      const { error: inviteErr, data: inviteList } = await supabase
         .from("invites")
-        .select("id, email")
-        .eq("businessId", profile.businessId)
-        .eq("role", "vendor");
+        .select("*")
+        .eq("businessId", profile.business_id);
+
       setInvites(inviteList || []);
+
+      if (inviteErr) throw inviteErr;
 
       setLoading(false);
 
@@ -69,7 +63,7 @@ const VendorList = () => {
             event: "*",
             schema: "public",
             table: "profiles",
-            filter: `businessId=eq.${profile.businessId}`,
+            filter: `businessId=eq.${profile.business_id}`,
           },
           (payload) => {
             const newProfile = payload.new as ProfileProps | undefined;
@@ -88,7 +82,7 @@ const VendorList = () => {
             event: "*",
             schema: "public",
             table: "invites",
-            filter: `businessId=eq.${profile.businessId}`,
+            filter: `businessId=eq.${profile.business_id}`,
           },
           (payload) => {
             setInvites((prev) => {
@@ -96,10 +90,7 @@ const VendorList = () => {
                 return prev.filter((i) => i.id !== payload.old.id);
               }
               if (payload.eventType === "INSERT") {
-                return [
-                  ...prev,
-                  { id: payload.new.id, email: payload.new.email },
-                ];
+                return [...prev, payload.new as InviteProps];
               }
               return prev;
             });
@@ -112,7 +103,7 @@ const VendorList = () => {
       };
     };
 
-    loadUserAndProfile();
+    loadVendors();
   }, []);
 
   const handleConfirmDelete = async () => {
@@ -167,13 +158,13 @@ const VendorList = () => {
             </li>
           ))}
 
-          {invites.map((inv) => (
+          {invites.map((invite) => (
             <li
-              key={inv.id}
+              key={invite.id}
               className="flex justify-between items-center bg-yellow-50 p-2 rounded"
             >
               <div>
-                {inv.email}
+                {invite.invited?.email}
                 <span className="text-xs text-yellow-600 ml-2">(Invited)</span>
               </div>
               {isOwner && (
@@ -181,7 +172,7 @@ const VendorList = () => {
                   variant="ghost"
                   className="text-red-600 hover:underline text-sm"
                   onClick={() =>
-                    setPendingDelete({ id: inv.id, type: "invite" })
+                    setPendingDelete({ id: invite.id, type: "invite" })
                   }
                 >
                   Cancel

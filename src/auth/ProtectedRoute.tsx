@@ -1,11 +1,11 @@
 import { Navigate } from "react-router-dom";
-import { useSupabaseAuth } from "@/hook/useSupabaseAuth";
+import { useAuth } from "@/hook/useAuth";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useSupabaseAuth();
+  const { profile, loading } = useAuth();
 
   if (loading) return <div>Loading...</div>;
-  if (!user) return <Navigate to="/login" />;
+  if (!profile) return <Navigate to="/login" />;
 
   return <>{children}</>;
 };

@@ -4,7 +4,6 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { InviteProps } from "@/lib/types";
 import { useNavigate } from "react-router-dom";
-import { useSupabaseAuth } from "@/hook/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
 import {
   AlertDialog,
@@ -15,10 +14,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/hook/useAuth";
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useSupabaseAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [invites, setInvites] = useState<InviteProps[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -27,7 +27,7 @@ export default function Notifications() {
   );
 
   useEffect(() => {
-    if (!user && !authLoading) {
+    if (!profile) {
       navigate("/login");
       toast.info("Please login to view notifications.");
       return;
@@ -35,11 +35,11 @@ export default function Notifications() {
 
     const fetchInvites = async () => {
       try {
-        if (!user) return;
+        if (!profile) return;
         const { data, error } = await supabase
           .from("invites")
           .select("*, inviter:profiles!invites_invited_by_fkey(email)")
-          .eq("invited_user_id", user.id)
+          .eq("invited_user_id", profile.id)
           .eq("status", "pending")
           .order("created_at", { ascending: false });
 
@@ -54,11 +54,11 @@ export default function Notifications() {
     };
 
     if (!authLoading) fetchInvites();
-  }, [user, authLoading, navigate]);
+  }, [profile, authLoading, navigate]);
 
   // Realtime subscription
   useEffect(() => {
-    if (!user) return;
+    if (!profile) return;
 
     const channel = supabase
       .channel("invites-realtime")
@@ -68,7 +68,7 @@ export default function Notifications() {
           event: "*",
           schema: "public",
           table: "invites",
-          filter: `invited_user_id=eq.${user.id}`,
+          filter: `invited_user_id=eq.${profile.id}`,
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
@@ -87,10 +87,10 @@ export default function Notifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [profile]);
 
   const handleAcceptInvite = async (invite: InviteProps) => {
-    if (!user) return;
+    if (!profile) return;
     const { id, business_id } = invite;
 
     try {
@@ -100,7 +100,7 @@ export default function Notifications() {
       const { error: updateProfileErr } = await supabase
         .from("profiles")
         .update({ business_id: business_id, role: "vendor" })
-        .eq("id", user.id);
+        .eq("id", profile.id);
 
       if (updateProfileErr) throw updateProfileErr;
 
@@ -124,7 +124,7 @@ export default function Notifications() {
   };
 
   const handleDeclineInvite = async (invite: InviteProps) => {
-    if (!user) return;
+    if (!profile) return;
     const { id, invited_by } = invite;
 
     try {

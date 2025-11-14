@@ -2,36 +2,22 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
-import { useSupabaseAuth } from "@/hook/useSupabaseAuth";
-import { toast } from "sonner";
+import { useAuth } from "@/hook/useAuth";
 
 const Header = () => {
-  const { user, loading } = useSupabaseAuth();
+  const { loading, profile } = useAuth();
+
   const [hasBusiness, setHasBusiness] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchProfile() {
-      if (!user) {
-        setHasBusiness(false);
-        return;
-      }
+      if (!profile) return;
 
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("business_id")
-        .eq("id", user.id)
-        .single();
-
-      if (error) {
-        console.error("Error fetching profile:", error);
-        toast.error("Error fetching profile");
-        return;
-      }
       setHasBusiness(!!profile?.business_id);
     }
     if (!loading) fetchProfile();
-  }, [user, loading]);
+  }, [profile, loading]);
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -43,7 +29,7 @@ const Header = () => {
       <nav className="text-white h-14 md:h-16 px-4 py-3 flex items-center justify-between text-xs md:text-sm mx-auto max-w-lg md:max-w-xl lg:max-w-5xl 2xl:max-w-7xl">
         <div className="flex justify-between items-center w-full space-x-4">
           <Link
-            to={user ? "/" : "/login"}
+            to={profile ? "/" : "/login"}
             className="hover:underline font-medium"
           >
             Stockinator
@@ -60,7 +46,7 @@ const Header = () => {
               </>
             )}
 
-            {!user || hasBusiness ? (
+            {!profile || hasBusiness ? (
               <></>
             ) : (
               <>
@@ -70,13 +56,13 @@ const Header = () => {
               </>
             )}
 
-            {user && (
+            {profile && (
               <Link to="/notifications" className="hover:underline">
                 Notifications
               </Link>
             )}
           </div>
-          {user && (
+          {profile && (
             <Button
               onClick={logout}
               className="bg-rose-500 px-3 py-1 hover:bg-rose-600"

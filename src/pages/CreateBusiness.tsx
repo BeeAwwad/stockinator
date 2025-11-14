@@ -10,41 +10,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hook/useAuth";
 
 const CreateBusiness = () => {
-  const [user, setUser] = useState<User | null>(null);
   const [businessName, setBusinessName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { profile } = useAuth();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
-    });
-  }, []);
-  // Check if user already has a business
   useEffect(() => {
     const checkExistingBusiness = async () => {
-      if (!user) return;
+      if (!profile) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("business_id")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.business_id) {
+      if (profile.business_id) {
         navigate("/");
       }
     };
     checkExistingBusiness();
-  }, [user, navigate]);
+  }, [profile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessName || !user) return;
+    if (!businessName || !profile) return;
 
     setLoading(true);
 
@@ -59,7 +47,7 @@ const CreateBusiness = () => {
         .from("businesses")
         .insert({
           name: businessName,
-          owner_id: user.id,
+          owner_id: profile.id,
         })
         .select("id")
         .single();
@@ -72,7 +60,7 @@ const CreateBusiness = () => {
           business_id: business.id,
           role: "owner",
         })
-        .eq("id", user.id);
+        .eq("id", profile.id);
 
       if (profileErr) throw profileErr;
       navigate("/");

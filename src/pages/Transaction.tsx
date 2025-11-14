@@ -1,36 +1,25 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useSupabaseAuth } from "@/hook/useSupabaseAuth";
 import AddTransaction from "@/components/AddTransaction";
 import TransactionList from "@/components/TransactionList";
-import type { ProductProps, ProfileProps } from "@/lib/types";
+import type { ProductProps } from "@/lib/types";
 import { toast } from "sonner";
+import { useAuth } from "@/hook/useAuth";
 
 export default function Transaction() {
-  const { user } = useSupabaseAuth();
-  const [profile, setProfile] = useState<ProfileProps | null>(null);
+  const { profile } = useAuth();
   const [products, setProducts] = useState<ProductProps[]>([]);
 
   const fetchData = async () => {
-    if (!user) return;
+    if (!profile) return;
 
     try {
-      // 1. Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) throw profileError;
-      setProfile(profileData as ProfileProps);
-
       // 2. Fetch products if businessId exists
-      if (profileData?.business_id) {
+      if (profile.business_id) {
         const { data: productsData, error: productsError } = await supabase
           .from("products")
           .select("*")
-          .eq("business_id", profileData.business_id);
+          .eq("business_id", profile.business_id);
 
         if (productsError) throw productsError;
         setProducts(productsData as ProductProps[]);
@@ -43,7 +32,7 @@ export default function Transaction() {
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [profile]);
 
   if (!profile) return <p>Loading...</p>;
 
@@ -52,7 +41,7 @@ export default function Transaction() {
       <AddTransaction
         products={products}
         businessId={profile.business_id}
-        createdBy={user?.id || "Unknown"}
+        createdBy={profile?.id || "Unknown"}
       />
       <TransactionList
         businessId={profile.business_id}

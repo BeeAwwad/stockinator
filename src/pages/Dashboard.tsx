@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import type { ProfileProps } from "@/lib/types";
 import InviteVendor from "@/components/InviteVendors";
 import VendorList from "@/components/VendorList";
 import { Link, useNavigate } from "react-router-dom";
@@ -18,42 +17,25 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { twMerge } from "tailwind-merge";
 import { supabase } from "@/lib/supabaseClient";
-import type { User } from "@supabase/supabase-js";
+import { useAuth } from "@/hook/useAuth";
 
 const Dashboard = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<ProfileProps | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [confirmName, setConfirmName] = useState("");
+  const { profile } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
-    });
-  }, []);
+    const loadBusiness = async () => {
+      if (!profile) return;
 
-  useEffect(() => {
-    const loadProfileAndBusiness = async () => {
-      if (!user) return;
-
-      const { data: profileData, error: profileErr } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (profileErr || !profileData) return;
-
-      setProfile(profileData);
-
-      if (profileData.business_id) {
+      if (profile.business_id) {
         const { data: businessData } = await supabase
           .from("businesses")
           .select("name")
-          .eq("id", profileData.business_id)
+          .eq("id", profile.business_id)
           .single();
 
         if (businessData) {
@@ -62,8 +44,8 @@ const Dashboard = () => {
       }
     };
 
-    loadProfileAndBusiness();
-  }, [user]);
+    loadBusiness();
+  }, [profile]);
 
   const handleDelete = async (businessId: string) => {
     if (profile?.role !== "owner") return;

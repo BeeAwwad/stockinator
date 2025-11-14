@@ -11,10 +11,10 @@ import {
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
-import type { ProfileProps } from "@/lib/types";
+import { useAuth } from "@/hook/useAuth";
 
 const InviteVendor = () => {
-  const [profile, setProfile] = useState<ProfileProps | null>(null);
+  const { profile } = useAuth();
   const [email, setEmail] = useState("");
   const [vendorCount, setVendorCount] = useState(0);
   const [businessId, setBusinessId] = useState<string | null>(null);
@@ -22,37 +22,20 @@ const InviteVendor = () => {
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    const loadProfileAndCount = async () => {
+    const countInvites = async () => {
       console.log("fetching user data...");
 
-      const { data: userData, error: userError } =
-        await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        toast.error("Couldn't find user");
-        return;
-      }
+      if (!profile) return;
 
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userData.user.id)
-        .single();
+      if (profile.role !== "owner") return;
 
-      if (profileError || !profileData) {
-        toast.error("Couldn't find profile");
-        return;
-      }
-
-      if (profileData.role !== "owner") return;
-
-      setProfile(profileData);
-      setBusinessId(profileData.business_id);
+      setBusinessId(profile.business_id);
 
       // Fetch initial count
       const { count, error: countError } = await supabase
         .from("invites")
         .select("*", { count: "exact", head: true })
-        .eq("business_id", profileData.business_id);
+        .eq("business_id", profile.business_id);
 
       if (countError) {
         console.error("Error fetching invite count:", countError);
@@ -70,13 +53,13 @@ const InviteVendor = () => {
             event: "*",
             schema: "public",
             table: "invites",
-            filter: `business_id=eq.${profileData.business_id}`,
+            filter: `business_id=eq.${profile.business_id}`,
           },
           async () => {
             const { count, error } = await supabase
               .from("invites")
               .select("*", { count: "exact", head: true })
-              .eq("business_id", profileData.business_id);
+              .eq("business_id", profile.business_id);
 
             if (!error) setVendorCount(count || 0);
           }
@@ -84,7 +67,7 @@ const InviteVendor = () => {
         .subscribe();
     };
 
-    loadProfileAndCount();
+    countInvites();
 
     return () => {
       if (channel) supabase.removeChannel(channel);
