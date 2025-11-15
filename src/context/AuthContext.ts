@@ -1,12 +1,14 @@
 import { createContext } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import type { ProfileProps } from "@/lib/types";
+import type { InviteProps, ProfileProps } from "@/lib/types";
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: ProfileProps | null;
-  loading: boolean;
+  profileLoading: boolean;
+  invites: InviteProps[] | [];
+  invitesLoading: boolean;
 
   reloadProfile: () => Promise<void>;
 
@@ -26,7 +28,10 @@ export const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   profile: null,
-  loading: true,
+  profileLoading: true,
+  invites: [],
+  invitesLoading: true,
+
   reloadProfile: async () => {},
 
   signUpNewUser: async () => ({ success: false }),

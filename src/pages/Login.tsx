@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -45,7 +45,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { signInUser, signUpNewUser } = useAuth();
+  const { signInUser, signUpNewUser, profile } = useAuth();
 
   const form = useForm<FormData>({
     resolver: zodResolver(loginSchema),
@@ -66,21 +66,25 @@ const Login = () => {
   const mode = watch("mode");
 
   const onSubmit = async (data: FormData) => {
-    console.log("Onsubmit is running:", data.mode, data.email, data.password);
     try {
+      console.log("Loading...");
       setLoading(true);
       if (data.mode === "signup") {
         const result = await signUpNewUser(data.email, data.password);
         if (result.success) {
           navigate("/notification");
         } else {
-          console.error("couldn't sign up. success:", result.success);
+          console.log("couldn't sign up. success:", result.success);
           toast.error("Sorry we couldn't sign you up.");
         }
       } else {
+        console.log("signing in...");
         const result = await signInUser(data.email, data.password);
+        console.log("result:", result);
         if (result.success) {
-          navigate("/notifications");
+          toast.success("Welcome back!");
+        } else {
+          console.log("error:", result.error);
         }
       }
     } catch (error) {
@@ -93,6 +97,10 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (profile) navigate("/notifications");
+  }, [profile]);
 
   return (
     <div className="flex items-center justify-center flex-col mt-8">

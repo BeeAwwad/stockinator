@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
 
 const Header = () => {
-  const { loading, profile } = useAuth();
+  const { profileLoading, profile } = useAuth();
 
   const [hasBusiness, setHasBusiness] = useState<boolean>(false);
   const navigate = useNavigate();
@@ -16,8 +16,8 @@ const Header = () => {
 
       setHasBusiness(!!profile?.business_id);
     }
-    if (!loading) fetchProfile();
-  }, [profile, loading]);
+    if (!profileLoading) fetchProfile();
+  }, [profile, profileLoading]);
 
   const logout = async () => {
     await supabase.auth.signOut();

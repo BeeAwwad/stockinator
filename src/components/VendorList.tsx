@@ -14,6 +14,7 @@ import {
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
+import { Loader2 } from "lucide-react";
 
 const VendorList = () => {
   const [vendors, setVendors] = useState<ProfileProps[]>([]);
@@ -37,7 +38,7 @@ const VendorList = () => {
       const { error: vendorErr, data: vendorList } = await supabase
         .from("profiles")
         .select("*")
-        .eq("businessId", profile.business_id)
+        .eq("business_id", profile.business_id)
         .eq("role", "vendor");
       setVendors(vendorList || []);
 
@@ -46,7 +47,7 @@ const VendorList = () => {
       const { error: inviteErr, data: inviteList } = await supabase
         .from("invites")
         .select("*")
-        .eq("businessId", profile.business_id);
+        .eq("business_id", profile.business_id);
 
       setInvites(inviteList || []);
 
@@ -63,7 +64,7 @@ const VendorList = () => {
             event: "*",
             schema: "public",
             table: "profiles",
-            filter: `businessId=eq.${profile.business_id}`,
+            filter: `business_id=eq.${profile.business_id}`,
           },
           (payload) => {
             const newProfile = payload.new as ProfileProps | undefined;
@@ -82,7 +83,7 @@ const VendorList = () => {
             event: "*",
             schema: "public",
             table: "invites",
-            filter: `businessId=eq.${profile.business_id}`,
+            filter: `business_id=eq.${profile.business_id}`,
           },
           (payload) => {
             setInvites((prev) => {
@@ -130,7 +131,13 @@ const VendorList = () => {
   };
 
   if (!businessId) return null;
-  if (loading) return <p>Loading vendors...</p>;
+  if (loading)
+    return (
+      <div className="flex space-x-2.5">
+        <p>Loading vendors</p>
+        <Loader2 className="animate-spin" />
+      </div>
+    );
 
   return (
     <div className="mt-6">

@@ -30,7 +30,7 @@ const Dashboard = () => {
   useEffect(() => {
     const loadBusiness = async () => {
       if (!profile) return;
-
+      console.log("profile", profile);
       if (profile.business_id) {
         const { data: businessData } = await supabase
           .from("businesses")

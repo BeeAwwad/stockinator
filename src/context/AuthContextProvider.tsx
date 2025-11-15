@@ -3,21 +3,32 @@ import type { Session, User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { toast } from "sonner";
-import type { ProfileProps } from "@/lib/types";
+import type { InviteProps, ProfileProps } from "@/lib/types";
 import { AuthContext } from "./AuthContext";
 
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileProps | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [invites, setInvites] = useState<InviteProps[]>([]);
+  const [invitesLoading, setInvitesLoading] = useState(true);
 
   const loadProfile = async (userId: string) => {
+    console.log("load profile", userId);
+
+    if (!userId) {
+      console.warn("loadProfile called with invalid userId:", userId);
+      return;
+    }
+    console.log("loading profile...");
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
+
+    console.log("profile load result:", data, error);
 
     if (error) {
       console.error("Error loading profile:", error.message);
@@ -32,20 +43,24 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const initialize = async () => {
-    setLoading(true);
+    setProfileLoading(true);
+
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
     setSession(session);
 
+    console.log("session:", session);
+
     if (session?.user) {
       setUser(session.user);
+      console.log("laoding profile");
       await loadProfile(session.user.id);
     } else {
       setUser(null);
       setProfile(null);
     }
 
-    setLoading(false);
+    setProfileLoading(false);
   };
 
   useEffect(() => {
@@ -57,7 +72,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
         if (newSession?.user) {
           setUser(newSession.user);
-          await loadProfile(newSession.user.id);
+          loadProfile(newSession.user.id);
         } else {
           setUser(null);
           setProfile(null);
@@ -68,14 +83,71 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  const loadInvites = async (profileId: string) => {
+    if (!profileId) return;
+
+    setInvitesLoading(true);
+
+    const { data, error } = await supabase
+      .from("invites")
+      .select("*, inviter:profiles!invites_invited_by_fkey(email)")
+      .eq("invited_user_id", profileId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching invites:", error);
+    } else {
+      setInvites(data ?? []);
+    }
+    setInvitesLoading(false);
+  };
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    loadInvites(profile.id);
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase
+      .channel("invites-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "invites",
+          filter: `invited_user_id=eq.${profile.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setInvites((prev) => [payload.new as InviteProps, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setInvites((prev) =>
+              prev.map((i) =>
+                i.id === payload.new.id ? (payload.new as InviteProps) : i
+              )
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id]);
+
   const signUpNewUser = async (email: string, password: string) => {
-    console.log("data:", email, password);
+    console.log("sign in data:", email, password);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
     if (error) {
-      console.error("Error signing up:", error);
+      console.log("Error signing up:", error);
       toast.error(error.message);
       return { success: false, error: error.message };
     }
@@ -121,8 +193,10 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         session,
         user,
         profile,
-        loading,
+        profileLoading,
         reloadProfile,
+        invites,
+        invitesLoading,
         signUpNewUser,
         signInUser,
         signOutUser,

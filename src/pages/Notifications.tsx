@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -18,76 +18,16 @@ import { useAuth } from "@/hook/useAuth";
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { profile, loading: authLoading } = useAuth();
-  const [invites, setInvites] = useState<InviteProps[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { profile, invites, invitesLoading } = useAuth();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedInvite, setSelectedInvite] = useState<InviteProps | null>(
     null
   );
 
-  useEffect(() => {
-    if (!profile) {
-      navigate("/login");
-      toast.info("Please login to view notifications.");
-      return;
-    }
-
-    const fetchInvites = async () => {
-      try {
-        if (!profile) return;
-        const { data, error } = await supabase
-          .from("invites")
-          .select("*, inviter:profiles!invites_invited_by_fkey(email)")
-          .eq("invited_user_id", profile.id)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setInvites(data ?? []);
-      } catch (err) {
-        console.error("Error fetching invite notifications", err);
-        toast.error("Failed to load invite notifications.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!authLoading) fetchInvites();
-  }, [profile, authLoading, navigate]);
-
-  // Realtime subscription
-  useEffect(() => {
-    if (!profile) return;
-
-    const channel = supabase
-      .channel("invites-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "invites",
-          filter: `invited_user_id=eq.${profile.id}`,
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setInvites((prev) => [payload.new as InviteProps, ...prev]);
-          } else if (payload.eventType === "UPDATE") {
-            setInvites((prev) =>
-              prev.map((i) =>
-                i.id === payload.new.id ? (payload.new as InviteProps) : i
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [profile]);
+  if (!profile) {
+    navigate("/login");
+    return;
+  }
 
   const handleAcceptInvite = async (invite: InviteProps) => {
     if (!profile) return;
@@ -146,10 +86,10 @@ export default function Notifications() {
       toast.error("Error declining invite.");
     }
   };
-  if (loading || authLoading) {
+  if (invitesLoading) {
     return (
       <div className="flex justify-center items-center py-20">
-        <Loader2 />
+        <p>Loading Invites</p> <Loader2 className="animate-spin" />
       </div>
     );
   }
