@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import type { ProfileProps, InviteProps } from "@/lib/types";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -17,95 +16,12 @@ import { useAuth } from "@/hook/useAuth";
 import { Loader2 } from "lucide-react";
 
 const VendorList = () => {
-  const [vendors, setVendors] = useState<ProfileProps[]>([]);
-  const [invites, setInvites] = useState<InviteProps[]>([]);
-  const [isOwner, setIsOwner] = useState(false);
-  const [businessId, setBusinessId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
     id: string;
     type: "vendor" | "invite";
   } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { profile } = useAuth();
-  console.log("businessId", businessId);
-
-  useEffect(() => {
-    const loadVendors = async () => {
-      if (!profile) return;
-      setBusinessId(profile.business_id);
-      setIsOwner(profile.role === "owner");
-
-      const { error: vendorErr, data: vendorList } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("business_id", profile.business_id)
-        .eq("role", "vendor");
-      setVendors(vendorList || []);
-
-      if (vendorErr) throw vendorErr;
-      // fetch invites
-      const { error: inviteErr, data: inviteList } = await supabase
-        .from("invites")
-        .select("*")
-        .eq("business_id", profile.business_id);
-
-      setInvites(inviteList || []);
-
-      if (inviteErr) throw inviteErr;
-
-      setLoading(false);
-
-      // Realtime subscriptions
-      const channel = supabase
-        .channel("vendorlist-realtime")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "profiles",
-            filter: `business_id=eq.${profile.business_id}`,
-          },
-          (payload) => {
-            const newProfile = payload.new as ProfileProps | undefined;
-
-            if (newProfile?.role === "vendor") {
-              setVendors((prev) => {
-                const filtered = prev.filter((v) => v.id !== newProfile.id);
-                return [...filtered, payload.new as ProfileProps];
-              });
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "invites",
-            filter: `business_id=eq.${profile.business_id}`,
-          },
-          (payload) => {
-            setInvites((prev) => {
-              if (payload.eventType === "DELETE") {
-                return prev.filter((i) => i.id !== payload.old.id);
-              }
-              if (payload.eventType === "INSERT") {
-                return [...prev, payload.new as InviteProps];
-              }
-              return prev;
-            });
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    };
-
-    loadVendors();
-  }, []);
+  const { profile, vendorsLoading, vendors, invitesLoading, invites } =
+    useAuth();
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
@@ -130,14 +46,16 @@ const VendorList = () => {
     }
   };
 
-  if (!businessId) return null;
-  if (loading)
+  if (!profile?.business_id) return;
+
+  if (vendorsLoading || invitesLoading) {
     return (
       <div className="flex space-x-2.5">
-        <p>Loading vendors</p>
+        <p>Loading vendors and invites</p>
         <Loader2 className="animate-spin" />
       </div>
     );
+  }
 
   return (
     <div className="mt-6">
@@ -153,7 +71,7 @@ const VendorList = () => {
               className="flex justify-between items-center bg-green-50 p-2 rounded"
             >
               <div>{v.display_name || v.email || `Vendor ${i + 1}`}</div>
-              {isOwner && (
+              {profile.role === "owner" && (
                 <Button
                   variant="ghost"
                   className="text-red-600 hover:underline text-sm"
@@ -174,7 +92,7 @@ const VendorList = () => {
                 {invite.invited?.email}
                 <span className="text-xs text-yellow-600 ml-2">(Invited)</span>
               </div>
-              {isOwner && (
+              {profile.role === "owner" && (
                 <Button
                   variant="ghost"
                   className="text-red-600 hover:underline text-sm"

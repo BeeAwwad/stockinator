@@ -1,6 +1,11 @@
-import { createContext } from "react";
+import { createContext, type Dispatch, type SetStateAction } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import type { InviteProps, ProductProps, ProfileProps } from "@/lib/types";
+import type {
+  InviteProps,
+  ProductProps,
+  ProfileProps,
+  TransactionProps,
+} from "@/lib/types";
 
 interface AuthContextType {
   session: Session | null;
@@ -11,9 +16,14 @@ interface AuthContextType {
   invitesLoading: boolean;
   businessName: string;
   products: ProductProps[] | [];
+  productsLoading: boolean;
+  vendors: ProfileProps[] | [];
+  vendorsLoading: boolean;
+  transactions: TransactionProps[] | [];
+  setTransactions: Dispatch<SetStateAction<TransactionProps[]>>;
+  transactionsLoading: boolean;
 
   reloadProfile: () => Promise<void>;
-
   signUpNewUser: (
     email: string,
     password: string
@@ -35,6 +45,12 @@ export const AuthContext = createContext<AuthContextType>({
   invitesLoading: true,
   businessName: "",
   products: [],
+  productsLoading: true,
+  vendors: [],
+  vendorsLoading: true,
+  transactions: [],
+  transactionsLoading: true,
+  setTransactions: (() => {}) as Dispatch<SetStateAction<TransactionProps[]>>,
 
   reloadProfile: async () => {},
 

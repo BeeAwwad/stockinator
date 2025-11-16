@@ -3,7 +3,12 @@ import type { Session, User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { toast } from "sonner";
-import type { ProductProps, InviteProps, ProfileProps } from "@/lib/types";
+import type {
+  ProductProps,
+  InviteProps,
+  ProfileProps,
+  TransactionProps,
+} from "@/lib/types";
 import { AuthContext } from "./AuthContext";
 
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
@@ -15,6 +20,11 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [invitesLoading, setInvitesLoading] = useState(true);
   const [businessName, setBusinessName] = useState("");
   const [products, setProducts] = useState<ProductProps[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [vendors, setVendors] = useState<ProfileProps[]>([]);
+  const [vendorsLoading, setVendorsLoading] = useState(true);
+  const [transactions, setTransactions] = useState<TransactionProps[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
 
   const loadProfile = async (userId: string) => {
     console.log("load profile", userId);
@@ -122,11 +132,22 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    if (!profile?.id) return;
-    loadInvites(profile.id);
-    loadBusinessName();
+    setBusinessName("");
+    setInvites([]);
+    setProducts([]);
+    setVendors([]);
+    setTransactions([]);
+
+    if (profile?.id) {
+      loadInvites(profile.id);
+    }
+    if (profile?.business_id) {
+      loadBusinessName();
+      loadProducts();
+    }
   }, [profile?.id]);
 
+  // Load Invites
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -149,6 +170,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
                 i.id === payload.new.id ? (payload.new as InviteProps) : i
               )
             );
+          } else if (payload.eventType === "DELETE") {
+            setInvites((prev) => prev.filter((i) => i.id !== payload.old.id));
           }
         }
       )
@@ -159,7 +182,9 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [profile?.id]);
 
+  // Products
   const loadProducts = async () => {
+    setProductsLoading(true);
     const { data, error } = await supabase
       .from("products")
       .select("*")
@@ -170,6 +195,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     setProducts(data || []);
+    setProductsLoading(false);
   };
 
   useEffect(() => {
@@ -210,6 +236,142 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [profile?.business_id]);
 
+  // Load vendors
+  const loadVendors = async () => {
+    if (!profile) return;
+    if (profile.role !== "owner") return;
+
+    setVendorsLoading(true);
+    const { error: vendorErr, data: vendorList } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("business_id", profile.business_id)
+      .eq("role", "vendor");
+    setVendors(vendorList || []);
+
+    if (vendorErr) throw vendorErr;
+    // fetch invites
+    const { error: inviteErr, data: inviteList } = await supabase
+      .from("invites")
+      .select("*")
+      .eq("business_id", profile.business_id);
+
+    setInvites(inviteList || []);
+
+    if (inviteErr) throw inviteErr;
+
+    setVendorsLoading(false);
+  };
+
+  useEffect(() => {
+    loadVendors();
+  });
+
+  useEffect(() => {
+    // Realtime subscriptions
+    if (profile?.role !== "owner") return;
+
+    const channel = supabase
+      .channel("vendorlist-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+          filter: `business_id=eq.${profile?.business_id}`,
+        },
+        (payload) => {
+          const newProfile = payload.new as ProfileProps | undefined;
+
+          if (newProfile?.role === "vendor") {
+            setVendors((prev) => {
+              const filtered = prev.filter((v) => v.id !== newProfile.id);
+              return [...filtered, payload.new as ProfileProps];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  });
+
+  // Load Transactions
+
+  const loadTransactions = async () => {
+    setTransactionsLoading(true);
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("business_id", profile?.business_id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      toast.error("Failed to load transactions");
+      return;
+    }
+    setTransactions(data);
+    setTransactionsLoading(false);
+  };
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    loadTransactions();
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (!profile?.business_id) return;
+
+    const channel = supabase
+      .channel(`transactions-${profile?.business_id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "transactions",
+          filter: `business_id=eq.${profile?.business_id}`,
+        },
+        (payload) => {
+          console.log("Realtime transaction change:", payload);
+          if (payload.eventType === "INSERT") {
+            setTransactionsLoading(true);
+            setTransactions((prev) => [
+              payload.new as TransactionProps,
+              ...prev,
+            ]);
+            setTransactionsLoading(false);
+          } else if (payload.eventType === "UPDATE") {
+            setTransactionsLoading(true);
+            setTransactions((prev) =>
+              prev.map((tx) =>
+                tx.id === payload.new.id
+                  ? (payload.new as TransactionProps)
+                  : tx
+              )
+            );
+            setTransactionsLoading(false);
+          } else if (payload.eventType === "DELETE") {
+            setTransactionsLoading(true);
+            setTransactions((prev) =>
+              prev.filter((tx) => tx.id !== payload.old.id)
+            );
+            setTransactionsLoading(false);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  });
+
+  // Login Signup
   const signUpNewUser = async (email: string, password: string) => {
     console.log("sign in data:", email, password);
     const { data, error } = await supabase.auth.signUp({
@@ -269,6 +431,13 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         invitesLoading,
         businessName,
         products,
+        productsLoading,
+        vendors,
+        vendorsLoading,
+        transactions,
+        setTransactions,
+        transactionsLoading,
+
         signUpNewUser,
         signInUser,
         signOutUser,

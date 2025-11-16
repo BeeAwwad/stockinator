@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import type { ProductProps, TransactionProps } from "@/lib/types";
+import { Loader, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,83 +20,24 @@ import {
   CardTitle,
 } from "./ui/card";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hook/useAuth";
 
-export default function TransactionList({
-  businessId,
-  isOwner,
-  products,
-}: {
-  businessId: string;
-  isOwner: boolean;
-  products: ProductProps[];
-}) {
-  const [transactions, setTransactions] = useState<TransactionProps[]>([]);
+export default function TransactionList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
   const [pendingVerifyId, setPendingVerifyId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!businessId) return;
-
-    const loadTransactions = async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("business_id", businessId)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error(error);
-        toast.error("Failed to load transactions");
-        return;
-      }
-      setTransactions(data as TransactionProps[]);
-    };
-
-    loadTransactions();
-
-    const channel = supabase
-      .channel(`transactions-${businessId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "transactions",
-          filter: `business_id=eq.${businessId}`,
-        },
-        (payload) => {
-          console.log("Realtime transaction change:", payload);
-          if (payload.eventType === "INSERT") {
-            setTransactions((prev) => [
-              payload.new as TransactionProps,
-              ...prev,
-            ]);
-          } else if (payload.eventType === "UPDATE") {
-            setTransactions((prev) =>
-              prev.map((tx) =>
-                tx.id === payload.new.id
-                  ? (payload.new as TransactionProps)
-                  : tx
-              )
-            );
-          } else if (payload.eventType === "DELETE") {
-            setTransactions((prev) =>
-              prev.filter((tx) => tx.id !== payload.old.id)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [businessId]);
+  const {
+    transactions,
+    setTransactions,
+    transactionsLoading,
+    profile,
+    products,
+  } = useAuth();
 
   const handleVerify = async (transactionId: string) => {
-    if (!isOwner) return;
+    if (profile?.role !== "owner") return;
     setTransactions((prev) =>
       prev.map((tx) =>
         tx.id === transactionId ? { ...tx, verified: true } : tx
@@ -124,7 +64,7 @@ export default function TransactionList({
   };
 
   const handleDelete = async (transactionId: string) => {
-    if (!isOwner) return;
+    if (profile?.role !== "owner") return;
     const deletedTx = transactions.find((t) => t.id === transactionId);
     setTransactions((prev) => prev.filter((tx) => tx.id !== transactionId));
 
@@ -144,7 +84,10 @@ export default function TransactionList({
 
     toast.success("Transaction deleted");
   };
-
+  if (transactionsLoading)
+    <div>
+      Loading <Loader className="animate-spin" />
+    </div>;
   return (
     <div>
       <div className="my-6 space-y-4">
@@ -206,7 +149,7 @@ export default function TransactionList({
                 )}
               </CardContent>
               <CardFooter className="flex justify-between">
-                {isOwner && (
+                {profile?.role === "owner" && (
                   <>
                     <Button
                       variant="secondary"

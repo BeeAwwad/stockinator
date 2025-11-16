@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm, Controller } from "react-hook-form";
-import type { ProductProps } from "@/lib/types";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { transactionSchema } from "@/lib/schemas";
@@ -24,18 +23,13 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hook/useAuth";
 
 type TransactionFormProps = z.infer<typeof transactionSchema>;
 
-export default function AddTransaction({
-  products,
-  businessId,
-  createdBy,
-}: {
-  products: ProductProps[];
-  businessId: string;
-  createdBy: string;
-}) {
+export default function AddTransaction() {
+  const { products, profile } = useAuth();
+
   const {
     control,
     register,
@@ -49,7 +43,7 @@ export default function AddTransaction({
     defaultValues: {
       productId: "",
       amount: 0,
-      createdBy: createdBy,
+      createdBy: profile?.business_id,
       createdAt: new Date(),
     },
   });
@@ -92,15 +86,15 @@ export default function AddTransaction({
     }
     const product = products.find((p) => p.id === data.productId);
 
-    if (!businessId) {
+    if (!profile?.business_id) {
       toast.error("Missing business context.");
       return;
     }
 
     const duplicate = await isDuplicateTransaction(
       data.productId,
-      createdBy,
-      businessId
+      profile.id,
+      profile.business_id
     );
 
     if (duplicate) {
@@ -127,10 +121,10 @@ export default function AddTransaction({
     }
 
     const { error } = await supabase.from("transactions").insert({
-      business_id: businessId,
+      business_id: profile.business_id,
       product_id: data.productId,
       amount: data.amount,
-      created_by: createdBy,
+      created_by: profile.id,
       verified: false,
     });
 
