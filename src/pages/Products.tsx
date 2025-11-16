@@ -1,7 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import type { ProfileProps } from "@/lib/types";
 import AddProduct from "@/components/AddProduct";
 import ProductList from "@/components/ProductList";
 import {
@@ -11,38 +7,14 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
-import { supabase } from "@/lib/supabaseClient";
-import { toast } from "sonner";
+import { useAuth } from "@/hook/useAuth";
 
 export default function ProductsPage() {
-  const [profile, setProfile] = useState<ProfileProps | null>(null);
+  const { profile, profileLoading } = useAuth();
 
-  useEffect(() => {
-    const fetchUserAndProfile = async () => {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) return;
+  if (profileLoading) return <p>Loading...</p>;
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error) {
-        console.error(error);
-        toast.error("Failed to load profile.");
-        return;
-      }
-      setProfile(data as ProfileProps);
-    };
-
-    fetchUserAndProfile();
-  }, []);
-
-  if (!profile) return <p>Loading...</p>;
+  if (!profile) return;
 
   return (
     <div className="py-6 flex flex-col items-center">
@@ -62,10 +34,7 @@ export default function ProductsPage() {
           </CardContent>
         </Card>
       )}
-      <ProductList
-        businessId={profile.business_id}
-        isOwner={profile.role === "owner"}
-      />
+      <ProductList isOwner={profile.role === "owner"} />
     </div>
   );
 }

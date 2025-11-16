@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,73 +24,18 @@ import { Label } from "./ui/label";
 import { supabase } from "@/lib/supabaseClient";
 import type { ProductProps } from "@/lib/types";
 import { Input } from "./ui/input";
+import { useAuth } from "@/hook/useAuth";
 
-export default function ProductList({
-  businessId,
-  isOwner,
-}: {
-  businessId: string;
-  isOwner: boolean;
-}) {
-  const [products, setProducts] = useState<ProductProps[]>([]);
+export default function ProductList({ isOwner }: { isOwner: boolean }) {
   const [editing, setEditing] = useState<{
     [key: string]: Partial<ProductProps>;
   }>({});
-  console.log("editing", editing);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    if (!businessId) return;
-
-    const loadProducts = async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("business_id", businessId);
-      if (error) {
-        console.error(error);
-        toast.error("Failed to load products.");
-        return;
-      }
-      setProducts(data || []);
-    };
-    loadProducts();
-
-    // realtime channel
-    const channel = supabase
-      .channel(`products:${businessId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "products",
-          filter: `business_id=eq.${businessId}`,
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setProducts((prev) => [...prev, payload.new as ProductProps]);
-          } else if (payload.eventType === "UPDATE") {
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.id === payload.new.id ? (payload.new as ProductProps) : p
-              )
-            );
-          } else if (payload.eventType === "DELETE") {
-            setProducts((prev) => prev.filter((p) => p.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [businessId]);
+  const { products } = useAuth();
 
   const handleEdit = async (id: string) => {
     const changes = editing[id];

@@ -3,7 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { toast } from "sonner";
-import type { InviteProps, ProfileProps } from "@/lib/types";
+import type { ProductProps, InviteProps, ProfileProps } from "@/lib/types";
 import { AuthContext } from "./AuthContext";
 
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
@@ -13,6 +13,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(true);
   const [invites, setInvites] = useState<InviteProps[]>([]);
   const [invitesLoading, setInvitesLoading] = useState(true);
+  const [businessName, setBusinessName] = useState("");
+  const [products, setProducts] = useState<ProductProps[]>([]);
 
   const loadProfile = async (userId: string) => {
     console.log("load profile", userId);
@@ -103,9 +105,26 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     setInvitesLoading(false);
   };
 
+  const loadBusinessName = async () => {
+    if (!profile) return;
+
+    if (profile.business_id) {
+      const { data: businessData } = await supabase
+        .from("businesses")
+        .select("name")
+        .eq("id", profile.business_id)
+        .single();
+
+      if (businessData) {
+        setBusinessName(businessData.name);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!profile?.id) return;
     loadInvites(profile.id);
+    loadBusinessName();
   }, [profile?.id]);
 
   useEffect(() => {
@@ -139,6 +158,57 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       supabase.removeChannel(channel);
     };
   }, [profile?.id]);
+
+  const loadProducts = async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("business_id", profile?.business_id);
+    if (error) {
+      console.error(error);
+      toast.error("Failed to load products.");
+      return;
+    }
+    setProducts(data || []);
+  };
+
+  useEffect(() => {
+    if (profile?.business_id) loadProducts();
+  }, [profile?.business_id]);
+
+  useEffect(() => {
+    if (!profile?.business_id) return;
+
+    const channel = supabase
+      .channel(`products:${profile?.business_id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "products",
+          filter: `business_id=eq.${profile.business_id}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setProducts((prev) => [...prev, payload.new as ProductProps]);
+          } else if (payload.eventType === "UPDATE") {
+            setProducts((prev) =>
+              prev.map((p) =>
+                p.id === payload.new.id ? (payload.new as ProductProps) : p
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setProducts((prev) => prev.filter((p) => p.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.business_id]);
 
   const signUpNewUser = async (email: string, password: string) => {
     console.log("sign in data:", email, password);
@@ -197,6 +267,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         reloadProfile,
         invites,
         invitesLoading,
+        businessName,
+        products,
         signUpNewUser,
         signInUser,
         signOutUser,

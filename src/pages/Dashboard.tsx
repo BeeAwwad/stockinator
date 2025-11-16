@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import InviteVendor from "@/components/InviteVendors";
 import VendorList from "@/components/VendorList";
 import { Link, useNavigate } from "react-router-dom";
@@ -20,32 +20,11 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
 
 const Dashboard = () => {
-  const [businessName, setBusinessName] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [confirmName, setConfirmName] = useState("");
-  const { profile } = useAuth();
+  const { profile, businessName } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const loadBusiness = async () => {
-      if (!profile) return;
-      console.log("profile", profile);
-      if (profile.business_id) {
-        const { data: businessData } = await supabase
-          .from("businesses")
-          .select("name")
-          .eq("id", profile.business_id)
-          .single();
-
-        if (businessData) {
-          setBusinessName(businessData.name);
-        }
-      }
-    };
-
-    loadBusiness();
-  }, [profile]);
 
   const handleDelete = async (businessId: string) => {
     if (profile?.role !== "owner") return;
