@@ -40,8 +40,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       .eq("id", userId)
       .single();
 
-    console.log("profile load result:", data, error);
-
     if (error) {
       console.error("Error loading profile:", error.message);
       return;
@@ -60,8 +58,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
     setSession(session);
-
-    console.log("session:", session);
 
     if (session?.user) {
       setUser(session.user);
@@ -180,7 +176,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id]);
+  }, [ invites ]);
 
   // Products
   const loadProducts = async () => {
@@ -234,42 +230,29 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.business_id]);
+  }, [ products ]);
 
   // Load vendors
   const loadVendors = async () => {
-    if (!profile) return;
-    if (profile.role !== "owner") return;
+    if (!profile?.business_id) return;
 
     setVendorsLoading(true);
-    const { error: vendorErr, data: vendorList } = await supabase
+    const { error, data } = await supabase
       .from("profiles")
       .select("*")
       .eq("business_id", profile.business_id)
       .eq("role", "vendor");
-    setVendors(vendorList || []);
-
-    if (vendorErr) throw vendorErr;
-    // fetch invites
-    const { error: inviteErr, data: inviteList } = await supabase
-      .from("invites")
-      .select("*")
-      .eq("business_id", profile.business_id);
-
-    setInvites(inviteList || []);
-
-    if (inviteErr) throw inviteErr;
-
+    setVendors(data || []);
+    if (error) throw error;
     setVendorsLoading(false);
   };
 
   useEffect(() => {
     loadVendors();
-  });
+  }, [profile?.business_id, vendors]);
 
   useEffect(() => {
-    // Realtime subscriptions
-    if (profile?.role !== "owner") return;
+    if (!profile?.business_id) return;
 
     const channel = supabase
       .channel("vendorlist-realtime")
@@ -297,7 +280,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  });
+  }, [ vendors ]);
 
   // Load Transactions
 
@@ -340,10 +323,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
           console.log("Realtime transaction change:", payload);
           if (payload.eventType === "INSERT") {
             setTransactionsLoading(true);
-            setTransactions((prev) => [
-              payload.new as TransactionProps,
-              ...prev,
-            ]);
+            setTransactions((prev) => [ ...prev, payload.new as TransactionProps ]);
             setTransactionsLoading(false);
           } else if (payload.eventType === "UPDATE") {
             setTransactionsLoading(true);
@@ -369,7 +349,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  });
+  }, [ transactions ]);
 
   // Login Signup
   const signUpNewUser = async (email: string, password: string) => {

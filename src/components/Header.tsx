@@ -1,23 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
 
 const Header = () => {
-  const { profileLoading, profile } = useAuth();
+  const { profile } = useAuth();
 
-  const [hasBusiness, setHasBusiness] = useState<boolean>(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    async function fetchProfile() {
-      if (!profile) return;
-
-      setHasBusiness(!!profile?.business_id);
-    }
-    if (!profileLoading) fetchProfile();
-  }, [profile, profileLoading]);
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -35,7 +24,7 @@ const Header = () => {
             Stockinator
           </Link>
           <div className="flex space-x-4">
-            {hasBusiness && (
+            {profile?.business_id && (
               <>
                 <Link to="/products" className="hover:underline">
                   Products
@@ -46,7 +35,7 @@ const Header = () => {
               </>
             )}
 
-            {!profile || hasBusiness ? (
+            {!profile || profile.business_id ? (
               <></>
             ) : (
               <>

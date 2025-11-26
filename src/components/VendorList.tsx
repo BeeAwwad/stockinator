@@ -22,7 +22,7 @@ const VendorList = () => {
   } | null>(null);
   const { profile, vendorsLoading, vendors, invitesLoading, invites } =
     useAuth();
-
+  console.log("invites:", invites);
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
     const { id, type } = pendingDelete;
@@ -35,7 +35,7 @@ const VendorList = () => {
           .eq("id", id);
         toast.success("Vendor removed.");
       } else {
-        await supabase.from("invites").delete().eq("id", id);
+        await supabase.from("invites").delete().eq("invited_user_id", id);
         toast.success("Invite cancelled.");
       }
     } catch (err) {

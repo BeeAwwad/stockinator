@@ -72,7 +72,7 @@ const Login = () => {
       if (data.mode === "signup") {
         const result = await signUpNewUser(data.email, data.password);
         if (result.success) {
-          navigate("/notification");
+          toast.success("Welcome");
         } else {
           console.log("couldn't sign up. success:", result.success);
           toast.error("Sorry we couldn't sign you up.");

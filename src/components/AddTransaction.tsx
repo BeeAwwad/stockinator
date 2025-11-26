@@ -24,6 +24,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
+import { Loader2 } from "lucide-react";
 
 type TransactionFormProps = z.infer<typeof transactionSchema>;
 
@@ -50,6 +51,7 @@ export default function AddTransaction() {
 
   const [price, setPrice] = useState<string>("");
   const [total, setTotal] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmitted, setLastSubmitted] = useState<number | null>(null);
 
   const isDuplicateTransaction = async (
@@ -76,9 +78,12 @@ export default function AddTransaction() {
   };
 
   const handleFormSubmit = async (data: TransactionFormProps) => {
+    setIsSubmitting(true);
+
     const now = new Date();
 
     if (lastSubmitted && now.getTime() - lastSubmitted < 60000) {
+      setIsSubmitting(false);
       toast.warning(
         "Please wait a minute before submitting another transaction."
       );
@@ -87,6 +92,7 @@ export default function AddTransaction() {
     const product = products.find((p) => p.id === data.productId);
 
     if (!profile?.business_id) {
+      setIsSubmitting(false); 
       toast.error("Missing business context.");
       return;
     }
@@ -98,6 +104,7 @@ export default function AddTransaction() {
     );
 
     if (duplicate) {
+      setIsSubmitting(false);
       toast.warning("Duplicate transaction detected in the last 2 minutes.");
       return;
     }
@@ -111,12 +118,14 @@ export default function AddTransaction() {
         .eq("id", product.id);
 
       if (updateError) {
+     	setIsSubmitting(false); 
         console.error("Stock update failed:", updateError);
         toast.error("Failed to update product stock.");
         return;
       }
     } else {
-      toast.error("Selected product not found or stock is invalid.");
+     	setIsSubmitting(false);
+	toast.error("Selected product not found or stock is invalid.");
       return;
     }
 
@@ -129,11 +138,12 @@ export default function AddTransaction() {
     });
 
     if (error) {
+      setIsSubmitting(false); 
       console.error("Insert failed:", error);
       toast.error("Failed to add transaction.");
       return;
     }
-
+    setIsSubmitting(false); 
     toast.success("Transaction created!");
     setLastSubmitted(now.getTime());
     setPrice("");
@@ -144,9 +154,7 @@ export default function AddTransaction() {
   return (
     <Card>
       <form
-        onSubmit={handleSubmit(handleFormSubmit, (errors) => {
-          console.log("🧨 FORM ERRORS:", errors);
-        })}
+        onSubmit={handleSubmit(handleFormSubmit)}
         className="space-y-3"
       >
         <CardHeader>
@@ -235,6 +243,8 @@ export default function AddTransaction() {
           ) : (
             ""
           )}
+
+	  {isSubmitting ? (<div><Loader2 className={"animate-spin"} /></div>) : ""}
         </CardContent>
         <CardFooter>
           <Button type="submit" className="w-full mt-2.5">
