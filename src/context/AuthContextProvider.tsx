@@ -91,26 +91,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const loadInvites = async (profileId: string) => {
-    if (!profileId) return;
-
-    setInvitesLoading(true);
-
-    const { data, error } = await supabase
-      .from("invites")
-      .select("*, inviter:profiles!invites_invited_by_fkey(email)")
-      .eq("invited_user_id", profileId)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching invites:", error);
-    } else {
-      setInvites(data ?? []);
-    }
-    setInvitesLoading(false);
-  };
-
+  
   const loadBusinessName = async () => {
     if (!profile) return;
 
@@ -144,8 +125,45 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   }, [profile?.id]);
 
   // Load Invites
+const loadInvites = async (profileId: string) => {
+    if (!profileId) return;
+
+   setInvitesLoading(true);
+   
+
+   let query = supabase.from("invites")
+   	.select("*, inviter:profiles!invites_invited_by_fkey(email), invited:profiles!invites_invited_user_id_fkey(email)")
+	.order("created_at", { ascending: false });
+
+   if (profile.role === "owner" && profile.business_id) {
+  	query = query.eq("business_id", profile.business_id); 
+   } else {
+  	query = query.eq("invited_user_id", profile.id); 
+   }
+
+    const { data, error } = await query;
+      
+    if (error) {
+      console.error("Error fetching invites:", error);
+      setInvitesLoading(false);
+    } else {
+      setInvites(data ?? []);
+      console.log("invites:", invites);
+    }
+    setInvitesLoading(false);
+
+};
+
   useEffect(() => {
     if (!profile?.id) return;
+
+    let filter = "";
+
+    if (profile.role === "owner" && profile.business_id) {
+   	filter = `business_id=eq.${profile.business_id}`; 
+    } else {
+   	filter = `invited_user_id=eq.${profile.id}`; 
+    }
 
     const channel = supabase
       .channel("invites-realtime")
@@ -155,19 +173,25 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
           event: "*",
           schema: "public",
           table: "invites",
-          filter: `invited_user_id=eq.${profile.id}`,
+          filter,
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
+	    setInvitesLoading(true);
             setInvites((prev) => [payload.new as InviteProps, ...prev]);
+	    setInvitesLoading(false);
           } else if (payload.eventType === "UPDATE") {
+	    setInvitesLoading(true);
             setInvites((prev) =>
               prev.map((i) =>
                 i.id === payload.new.id ? (payload.new as InviteProps) : i
               )
             );
+	    setInvitesLoading(false);
           } else if (payload.eventType === "DELETE") {
+	    setInvitesLoading(true);
             setInvites((prev) => prev.filter((i) => i.id !== payload.old.id));
+	    setInvitesLoading(false);
           }
         }
       )
@@ -175,8 +199,9 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       supabase.removeChannel(channel);
-    };
-  }, [ invites ]);
+    }
+
+  }, [ profile?.id ]);
 
   // Products
   const loadProducts = async () => {
@@ -230,20 +255,23 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ products ]);
+  }, [ profile?.id ]);
 
   // Load vendors
   const loadVendors = async () => {
     if (!profile?.business_id) return;
 
-    setVendorsLoading(true);
     const { error, data } = await supabase
       .from("profiles")
       .select("*")
       .eq("business_id", profile.business_id)
       .eq("role", "vendor");
     setVendors(data || []);
-    if (error) throw error;
+    if (error) {
+   	console.error(error);
+	toast.error(error.message);
+       setVendorsLoading(false);	
+    };
     setVendorsLoading(false);
   };
 
@@ -280,7 +308,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ vendors ]);
+  }, [ profile?.id ]);
 
   // Load Transactions
 
@@ -349,7 +377,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ transactions ]);
+  }, [ profile?.id ]);
 
   // Login Signup
   const signUpNewUser = async (email: string, password: string) => {
@@ -409,12 +437,14 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         reloadProfile,
         invites,
         invitesLoading,
+	setInvites,
         businessName,
         products,
         productsLoading,
         vendors,
         vendorsLoading,
-        transactions,
+      	setVendors, 
+       	transactions,
         setTransactions,
         transactionsLoading,
 

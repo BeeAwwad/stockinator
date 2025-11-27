@@ -14,72 +14,15 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
 
 const InviteVendor = () => {
-  const { profile } = useAuth();
+  const { profile, vendors } = useAuth();
   const [email, setEmail] = useState("");
-  const [vendorCount, setVendorCount] = useState(0);
-  const [businessId, setBusinessId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    const countInvites = async () => {
-      console.log("fetching user data...");
-
-      if (!profile) return;
-
-      if (profile.role !== "owner") return;
-
-      setBusinessId(profile.business_id);
-
-      // Fetch initial count
-      const { count, error: countError } = await supabase
-        .from("invites")
-        .select("*", { count: "exact", head: true })
-        .eq("business_id", profile.business_id);
-
-      if (countError) {
-        console.error("Error fetching invite count:", countError);
-      } else {
-        console.log("Initial invite count:", count);
-        setVendorCount(count || 0);
-      }
-
-      // Subscribe to realtime changes AFTER count is fetched
-      channel = supabase
-        .channel("vendor-invite-realtime")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "invites",
-            filter: `business_id=eq.${profile.business_id}`,
-          },
-          async () => {
-            const { count, error } = await supabase
-              .from("invites")
-              .select("*", { count: "exact", head: true })
-              .eq("business_id", profile.business_id);
-
-            if (!error) setVendorCount(count || 0);
-          }
-        )
-        .subscribe();
-    };
-
-    countInvites();
-
-    return () => {
-      if (channel) supabase.removeChannel(channel);
-    };
-  }, []);
-
+  
   const handleInviteVendor = async () => {
     const vendorEmail = email.trim().toLowerCase();
 
-    if (!vendorEmail || !businessId) return;
+    if (!vendorEmail || !profile.business_id) return;
 
-    if (vendorCount >= 2) {
+    if (vendors.length >= 2) {
       toast.error("Vendor limit reached (2 max).");
       return;
     }
@@ -98,7 +41,7 @@ const InviteVendor = () => {
 
       const { error } = await supabase.from("invites").insert({
         invited_user_id: vendorProfile.id,
-        business_id: businessId,
+        business_id: profile.business_id,
         invited_by: profile?.id,
       });
 
@@ -119,14 +62,14 @@ const InviteVendor = () => {
     }
   };
 
-  if (!businessId) return null;
+  if (!profile.business_id) return null;
 
   return (
     <div className="flex items-center">
       <Card className="w-full max-w-sm md:max-w-lg lg:max-w-xl">
         <CardHeader>
           <CardTitle>Invite Vendor</CardTitle>
-          <CardDescription>Vendors invited: {vendorCount}/2</CardDescription>
+          <CardDescription>Vendors invited: {vendors.length}/2</CardDescription>
         </CardHeader>
         <CardContent>
           <Input
@@ -140,7 +83,7 @@ const InviteVendor = () => {
           <Button
             className="w-full"
             onClick={handleInviteVendor}
-            disabled={!email || vendorCount >= 2}
+            disabled={!email || vendors.length >= 2}
           >
             Add Vendor
           </Button>

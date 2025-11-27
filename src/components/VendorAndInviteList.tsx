@@ -15,46 +15,73 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
 import { Loader2 } from "lucide-react";
 
-const VendorList = () => {
+const VendorAndInviteList = () => {
   const [pendingDelete, setPendingDelete] = useState<{
     id: string;
     type: "vendor" | "invite";
   } | null>(null);
-  const { profile, vendorsLoading, vendors, invitesLoading, invites } =
+  const { profile, vendorsLoading, vendors, invitesLoading, invites, setInvites } =
     useAuth();
-  console.log("invites:", invites);
+
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
     const { id, type } = pendingDelete;
-
-    try {
+        
       if (type === "vendor") {
-        await supabase
+	const removedVendor = vendors.find((v) => v.id === id);
+	setVendor((prev) => prev.filter((v) => v.id !== id));
+
+        const { error } = await supabase
           .from("profiles")
           .update({ business_id: null, role: "unassigned" })
           .eq("id", id);
-        toast.success("Vendor removed.");
+
+        if (error) {
+		console.log("error removing vendors:", error);	
+		toast.error("Failed to remove vendor");
+		
+		if (removedVendor) {
+			setVendors((prev) => [...prev, removedVendor]);	
+		}	
+	} 
+	  
+	  toast.success("Vendor removed.");
+
       } else {
-        await supabase.from("invites").delete().eq("invited_user_id", id);
-        toast.success("Invite cancelled.");
-      }
-    } catch (err) {
-      console.error("Failed to delete:", err);
-      toast.error("Failed to remove. Please try again.");
-    } finally {
+	const canceledInvite = invites.find((i) => i.id === id);
+	setInvites((prev) => prev.filter((i) => i.id !== id));
+
+        const { error } = await supabase.from("invites").delete().eq("id", id);
+      	
+        if (error) {
+		console.log("error canceling invite:", error);
+		toast.error("Failed to cancel invite");		
+		
+		if (canceledInvite) {
+			setInvites((prev) => [...prev, canceledInvite]);	
+		}	
+	} 	
+       	toast.success("Invite cancelled.");
+    } 
       setPendingDelete(null);
-    }
   };
 
   if (!profile?.business_id) return;
 
-  if (vendorsLoading || invitesLoading) {
+  if (vendorsLoading) {
     return (
       <div className="flex space-x-2.5">
-        <p>Loading vendors and invites</p>
+        <p>Loading vendors</p>
         <Loader2 className="animate-spin" />
       </div>
     );
+  } else if (invitesLoading) {
+ 	return (
+      <div className="flex space-x-2.5">
+        <p>Loading invites</p>
+        <Loader2 className="animate-spin" />
+      </div>
+    ); 
   }
 
   return (
@@ -70,7 +97,9 @@ const VendorList = () => {
               key={v.id}
               className="flex justify-between items-center bg-green-50 p-2 rounded"
             >
-              <div>{v.display_name || v.email || `Vendor ${i + 1}`}</div>
+              <div>{v.display_name || v.email || `Vendor ${i + 1}`}
+	     	<span className="text-xs text-green-600 ml-2">(Vendor)</span> 
+	      </div>
               {profile.role === "owner" && (
                 <Button
                   variant="ghost"
@@ -138,4 +167,4 @@ const VendorList = () => {
   );
 };
 
-export default VendorList;
+export default VendorAndInviteList;

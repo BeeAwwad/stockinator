@@ -14,11 +14,13 @@ interface AuthContextType {
   profileLoading: boolean;
   invites: InviteProps[] | [];
   invitesLoading: boolean;
+  setInvites: Dispatch<SetStateAction<InviteProps[]>>;
   businessName: string;
   products: ProductProps[] | [];
   productsLoading: boolean;
   vendors: ProfileProps[] | [];
   vendorsLoading: boolean;
+  setVendors: Dispatch<SetStateAction<ProfileProps[]>>;
   transactions: TransactionProps[] | [];
   setTransactions: Dispatch<SetStateAction<TransactionProps[]>>;
   transactionsLoading: boolean;
@@ -34,7 +36,7 @@ interface AuthContextType {
     password: string
   ) => Promise<{ success: boolean; data?: unknown; error?: string }>;
   signOutUser: () => Promise<void>;
-}
+};
 
 export const AuthContext = createContext<AuthContextType>({
   session: null,
@@ -43,11 +45,13 @@ export const AuthContext = createContext<AuthContextType>({
   profileLoading: true,
   invites: [],
   invitesLoading: true,
+  setInvites: (() => {}) as Dispatch<SetStateAction<InviteProps[]>>,
   businessName: "",
   products: [],
   productsLoading: true,
   vendors: [],
   vendorsLoading: true,
+  setVendors: (() => {}) as Dispatch<SetStateAction<ProfileProps[]>>, 
   transactions: [],
   transactionsLoading: true,
   setTransactions: (() => {}) as Dispatch<SetStateAction<TransactionProps[]>>,
