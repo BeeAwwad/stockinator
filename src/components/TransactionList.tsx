@@ -131,7 +131,7 @@ export default function TransactionList() {
                     Added by:{" "}
                   </span>
                   <span className="text-gray-950">
-                    {tx.created_by || "Unknown"}
+                    {tx.created_by_email.email || "Unknown"}
                   </span>
                 </p>
                 <p className="text-sm flex">

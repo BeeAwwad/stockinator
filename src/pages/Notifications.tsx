@@ -94,7 +94,9 @@ export default function Notifications() {
     );
   }
 
-  if (invites.length === 0) {
+  const personalInvites = invites.filter((invite) => invite.invited_user_id === profile.id)
+
+  if (personalInvites.length === 0) {
     return (
       <div className="text-center py-10 text-muted-foreground">
         No Notifications
@@ -105,11 +107,11 @@ export default function Notifications() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Notifications</h2>
 
-      {invites.length === 0 && (
+      {personalInvites.length === 0 && (
         <p className="text-muted-foreground">No notifications</p>
       )}
 
-      {invites.map((invite) => (
+      {personalInvites.map((invite) => (
         <div
           key={invite.id}
           className="border rounded-lg p-4 shadow-sm bg-white"

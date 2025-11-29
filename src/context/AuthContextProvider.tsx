@@ -126,7 +126,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
   // Load Invites
 const loadInvites = async (profileId: string) => {
-    if (!profileId) return;
+    if (!profileId || !profile) return;
 
    setInvitesLoading(true);
    
@@ -148,7 +148,7 @@ const loadInvites = async (profileId: string) => {
       setInvitesLoading(false);
     } else {
       setInvites(data ?? []);
-      console.log("invites:", invites);
+      console.log("invites reloaded", invites);
     }
     setInvitesLoading(false);
 
@@ -177,22 +177,12 @@ const loadInvites = async (profileId: string) => {
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
-	    setInvitesLoading(true);
-            setInvites((prev) => [payload.new as InviteProps, ...prev]);
-	    setInvitesLoading(false);
-          } else if (payload.eventType === "UPDATE") {
-	    setInvitesLoading(true);
-            setInvites((prev) =>
-              prev.map((i) =>
-                i.id === payload.new.id ? (payload.new as InviteProps) : i
-              )
-            );
-	    setInvitesLoading(false);
-          } else if (payload.eventType === "DELETE") {
-	    setInvitesLoading(true);
-            setInvites((prev) => prev.filter((i) => i.id !== payload.old.id));
-	    setInvitesLoading(false);
-          }
+            console.log("invite inserted");
+	    loadInvites(profile.id);
+	  } else if (payload.eventType === "DELETE") {
+            console.log("invite deleted");
+		loadInvites(profile.id);	    
+	  }
         }
       )
       .subscribe();
@@ -201,7 +191,7 @@ const loadInvites = async (profileId: string) => {
       supabase.removeChannel(channel);
     }
 
-  }, [ profile?.id ]);
+  }, [ profile?.id, loadInvites ]);
 
   // Products
   const loadProducts = async () => {
@@ -316,7 +306,7 @@ const loadInvites = async (profileId: string) => {
     setTransactionsLoading(true);
     const { data, error } = await supabase
       .from("transactions")
-      .select("*")
+      .select("*, created_by_email:profiles!transactions_created_by_fkey(email)")
       .eq("business_id", profile?.business_id)
       .order("created_at", { ascending: false });
 

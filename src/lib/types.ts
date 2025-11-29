@@ -23,6 +23,9 @@ export type TransactionProps = {
   created_by: string;
   created_at: Date;
   verified: boolean;
+  created_by_email?: {
+ 	email: string; 
+  }
 };
 
 export type InviteProps = {
