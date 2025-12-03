@@ -7,12 +7,13 @@ import ProtectedRoute from "@/auth/ProtectedRoute";
 import CreateBusiness from "@/pages/CreateBusiness";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
+import ResetPassword from "@/pages/ResetPassword";
+
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      {/* <Route path="/rest-password" element={<ResetPassword />} /> */}
-      {/* <Route path="/reset-complete" element={<ResetComplete />} /> */}
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register-business" element={<CreateBusiness />} />
       <Route
         path="/"

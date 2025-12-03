@@ -14,7 +14,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
 
 const InviteVendor = () => {
-  const { profile, vendors } = useAuth();
+  const { profile, vendors, invites } = useAuth();
   const [email, setEmail] = useState("");
   
   const handleInviteVendor = async () => {
@@ -22,10 +22,19 @@ const InviteVendor = () => {
 
     if (!vendorEmail || !profile.business_id) return;
 
-    if (vendors.length >= 2) {
-      toast.error("Vendor limit reached (2 max).");
-      return;
-    }
+  const alreadyInvited = invites.some(
+    (inv) => inv.invited?.email?.toLowerCase() === vendorEmail
+  );
+
+  if (alreadyInvited) {
+    toast.error("This user has already been invited.");
+    return;
+  }
+
+  if (vendors.length >= 2) {
+    toast.error("Vendor limit reached (2 max).");
+    return;
+  }
 
     try {
       const { data: vendorProfile, error: profileError } = await supabase

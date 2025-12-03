@@ -9,3 +9,16 @@ export const transactionSchema = z.object({
   createdBy: z.string(),
   createdAt: z.date(),
 });
+
+const MIN_PASSWORD_LENGTH = 8;
+
+export const passwordResetSchema = z.object({
+	newPassword: z.string().min(MIN_PASSWORD_LENGTH, {message: `Password must be at least ${MIN_PASSWORD_LENGTH} charcters long.`}),
+	confirmPassword: z.string(),
+})
+.refine((data) => data.newPassword === data.confirmPassword, {
+	message: "Passwords do not match.",
+	path: ["confirmPassword"],
+})
+
+
