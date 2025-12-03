@@ -153,8 +153,11 @@ const Login = () => {
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" disabled={loading} className="w-full">
+	  <CardAction className="mx-4">
+	 	<Button variant="link" onClick={() => navigate("/forgot-password")}>Forgot Password?</Button> 
+	  </CardAction>
+          <CardFooter className="flex flex-col gap-4">   
+	  <Button type="submit" disabled={loading} className="w-full">
               {loading
                 ? mode === "signup"
                   ? "Creating..."

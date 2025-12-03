@@ -8,13 +8,14 @@ import CreateBusiness from "@/pages/CreateBusiness";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
 import ResetPassword from "@/pages/ResetPassword";
+import ForgotPassword from "@/pages/ForgotPassword";
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/register-business" element={<CreateBusiness />} />
       <Route
         path="/"
         element={
@@ -22,6 +23,14 @@ const AppRoutes = () => {
             <Dashboard />
           </ProtectedRoute>
         }
+      />
+      <Route
+     	 path="/register-business" 
+	 element={
+		 <ProtectedRoute>
+		 	<CreateBusiness />
+		 </ProtectedRoute>
+	 } 
       />
       <Route
         path="/products"
