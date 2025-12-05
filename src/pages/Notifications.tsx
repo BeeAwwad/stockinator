@@ -58,6 +58,7 @@ export default function Notifications() {
     } catch (error) {
       console.error(error);
       toast.error("Failed to accept invite.");
+
       setInviteDialogOpen(false);
       setSelectedInvite(null);
     }
@@ -94,7 +95,9 @@ export default function Notifications() {
     );
   }
 
-  const personalInvites = invites.filter((invite) => invite.invited_user_id === profile.id)
+  const personalInvites = invites.filter(
+    (invite) => invite.invited_user_id === profile.id
+  );
 
   if (personalInvites.length === 0) {
     return (

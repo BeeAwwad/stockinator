@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { passwordResetSchema } from "@/lib/schemas";
 import { useForm, Controller } from "react-hook-form";
@@ -126,7 +126,7 @@ const ResetPasswordForm = () => {
           >
             {isLoading ? (
               <span className="flex items-center">
-                <Lock className="h-4 w-4 mr-2 animate-spin" /> Updating...
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating...
               </span>
             ) : (
               "Update Password"

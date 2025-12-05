@@ -36,7 +36,7 @@ interface AuthContextType {
     password: string
   ) => Promise<{ success: boolean; data?: unknown; error?: string }>;
   signOutUser: () => Promise<void>;
-};
+}
 
 export const AuthContext = createContext<AuthContextType>({
   session: null,
@@ -51,7 +51,7 @@ export const AuthContext = createContext<AuthContextType>({
   productsLoading: true,
   vendors: [],
   vendorsLoading: true,
-  setVendors: (() => {}) as Dispatch<SetStateAction<ProfileProps[]>>, 
+  setVendors: (() => {}) as Dispatch<SetStateAction<ProfileProps[]>>,
   transactions: [],
   transactionsLoading: true,
   setTransactions: (() => {}) as Dispatch<SetStateAction<TransactionProps[]>>,

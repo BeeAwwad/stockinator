@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   Card,
@@ -16,25 +16,32 @@ import { useAuth } from "@/hook/useAuth";
 const InviteVendor = () => {
   const { profile, vendors, invites } = useAuth();
   const [email, setEmail] = useState("");
-  
+
   const handleInviteVendor = async () => {
     const vendorEmail = email.trim().toLowerCase();
 
-    if (!vendorEmail || !profile.business_id) return;
+    if (!vendorEmail || !profile?.business_id) return;
 
-  const alreadyInvited = invites.some(
-    (inv) => inv.invited?.email?.toLowerCase() === vendorEmail
-  );
+    const isAvendor = vendors.some((v) => v.email === vendorEmail);
 
-  if (alreadyInvited) {
-    toast.error("This user has already been invited.");
-    return;
-  }
+    const alreadyInvited = invites.some(
+      (inv) => inv.invited?.email?.toLowerCase() === vendorEmail
+    );
 
-  if (vendors.length >= 2) {
-    toast.error("Vendor limit reached (2 max).");
-    return;
-  }
+    if (isAvendor) {
+      toast.error("This user is already a vendor");
+      return;
+    }
+
+    if (alreadyInvited) {
+      toast.error("This user has already been invited.");
+      return;
+    }
+
+    if (vendors.length >= 2) {
+      toast.error("Vendor limit reached (2 max).");
+      return;
+    }
 
     try {
       const { data: vendorProfile, error: profileError } = await supabase
@@ -71,7 +78,7 @@ const InviteVendor = () => {
     }
   };
 
-  if (!profile.business_id) return null;
+  if (!profile?.business_id) return null;
 
   return (
     <div className="flex items-center">

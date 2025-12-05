@@ -19,10 +19,10 @@ export type TransactionProps = {
   id: string;
   product_id: string;
   amount: number;
-  total: number;
   created_by: string;
   created_at: Date;
   verified: boolean;
+  is_offline?: boolean; 
   created_by_email?: {
  	email: string; 
   }

@@ -103,7 +103,7 @@ export default function TransactionList() {
               <CardHeader className="flex justify-between items-center border-b">
                 <CardTitle className="">Transaction</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  #{tx.id.slice(0, 6)}
+		{tx?.is_offline ? "offline" : ""}
                 </p>
               </CardHeader>
               <CardContent className="space-y-2.5">
@@ -131,7 +131,7 @@ export default function TransactionList() {
                     Added by:{" "}
                   </span>
                   <span className="text-gray-950">
-                    {tx.created_by_email.email || "Unknown"}
+                    {tx.created_by_email?.email || "Unknown"}
                   </span>
                 </p>
                 <p className="text-sm flex">

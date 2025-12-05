@@ -97,7 +97,7 @@ const VendorAndInviteList = () => {
               key={v.id}
               className="flex justify-between items-center bg-green-50 p-2 rounded"
             >
-              <div>{v.display_name || v.email || `Vendor ${i + 1}`}
+              <div>{v.email || `Vendor ${i + 1}`}
 	     	<span className="text-xs text-green-600 ml-2">(Vendor)</span> 
 	      </div>
               {profile.role === "owner" && (

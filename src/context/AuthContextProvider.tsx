@@ -10,6 +10,8 @@ import type {
   TransactionProps,
 } from "@/lib/types";
 import { AuthContext } from "./AuthContext";
+import { useOnlineStatus } from "@/hook/useOnlineStatus";
+import { offlineDB } from "@/lib/offlineDB";
 
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -25,27 +27,31 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [vendorsLoading, setVendorsLoading] = useState(true);
   const [transactions, setTransactions] = useState<TransactionProps[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const isOnline = useOnlineStatus();
 
   const loadProfile = async (userId: string) => {
-    console.log("load profile", userId);
+    try {
+      if (!userId) {
+        console.warn("loadProfile called with invalid userId:", userId);
+        return;
+      }
+      console.log("loading profile...");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
 
-    if (!userId) {
-      console.warn("loadProfile called with invalid userId:", userId);
-      return;
+      if (error) {
+        console.error("Error loading profile:", error.message);
+        return;
+      }
+      localStorage.setItem("profile", JSON.stringify(data));
+      setProfile(data);
+    } catch {
+      const catched = localStorage.getItem("profile");
+      if (catched) setProfile(JSON.parse(catched));
     }
-    console.log("loading profile...");
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.error("Error loading profile:", error.message);
-      return;
-    }
-
-    return setProfile(data);
   };
 
   const reloadProfile = async () => {
@@ -57,12 +63,21 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
-    setSession(session);
+
+    const catchedProfile = localStorage.getItem("profile");
 
     if (session?.user) {
+      setSession(session);
       setUser(session.user);
       console.log("laoding profile");
-      await loadProfile(session.user.id);
+
+      try {
+        await loadProfile(session.user.id);
+      } catch {
+        if (catchedProfile) setProfile(JSON.parse(catchedProfile));
+      }
+    } else if (catchedProfile) {
+      setProfile(JSON.parse(catchedProfile));
     } else {
       setUser(null);
       setProfile(null);
@@ -70,8 +85,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
     setProfileLoading(false);
   };
-
-  useEffect(() => {
+  
+useEffect(() => {
     initialize();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
@@ -91,7 +106,34 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  
+async function syncOfflineTransactions() {
+  const pending = await offlineDB.getAll("pending_transactions");
+
+  for (const tx of pending) {
+    const { is_offline, id, ...cleanTx} = tx;
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert(cleanTx)
+      .select()
+      .single();
+
+    if (!error) {
+      await offlineDB.delete("pending_transactions", tx.id);
+
+      setTransactions(prev =>
+        prev.map(t => (t.id === tx.id ? data : t))
+      );
+
+      toast.success("transactions synced");
+    }
+  }
+}
+
+useEffect(() => {
+  if (isOnline) syncOfflineTransactions();
+}, [isOnline]);
+
   const loadBusinessName = async () => {
     if (!profile) return;
 
@@ -125,24 +167,26 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   }, [profile?.id]);
 
   // Load Invites
-const loadInvites = async (profileId: string) => {
+  const loadInvites = async (profileId: string) => {
     if (!profileId || !profile) return;
 
-   setInvitesLoading(true);
-   
+    setInvitesLoading(true);
 
-   let query = supabase.from("invites")
-   	.select("*, inviter:profiles!invites_invited_by_fkey(email), invited:profiles!invites_invited_user_id_fkey(email)")
-	.order("created_at", { ascending: false });
+    let query = supabase
+      .from("invites")
+      .select(
+        "*, inviter:profiles!invites_invited_by_fkey(email), invited:profiles!invites_invited_user_id_fkey(email)"
+      )
+      .order("created_at", { ascending: false });
 
-   if (profile.role === "owner" && profile.business_id) {
-  	query = query.eq("business_id", profile.business_id); 
-   } else {
-  	query = query.eq("invited_user_id", profile.id); 
-   }
+    if (profile.role === "owner" && profile.business_id) {
+      query = query.eq("business_id", profile.business_id);
+    } else {
+      query = query.eq("invited_user_id", profile.id);
+    }
 
     const { data, error } = await query;
-      
+
     if (error) {
       console.error("Error fetching invites:", error);
       setInvitesLoading(false);
@@ -151,8 +195,7 @@ const loadInvites = async (profileId: string) => {
       console.log("invites reloaded", invites);
     }
     setInvitesLoading(false);
-
-};
+  };
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -160,9 +203,9 @@ const loadInvites = async (profileId: string) => {
     let filter = "";
 
     if (profile.role === "owner" && profile.business_id) {
-   	filter = `business_id=eq.${profile.business_id}`; 
+      filter = `business_id=eq.${profile.business_id}`;
     } else {
-   	filter = `invited_user_id=eq.${profile.id}`; 
+      filter = `invited_user_id=eq.${profile.id}`;
     }
 
     const channel = supabase
@@ -178,20 +221,19 @@ const loadInvites = async (profileId: string) => {
         (payload) => {
           if (payload.eventType === "INSERT") {
             console.log("invite inserted");
-	    loadInvites(profile.id);
-	  } else if (payload.eventType === "DELETE") {
+            loadInvites(profile.id);
+          } else if (payload.eventType === "DELETE") {
             console.log("invite deleted");
-		loadInvites(profile.id);	    
-	  }
+            loadInvites(profile.id);
+          }
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
-    }
-
-  }, [ profile?.id, loadInvites ]);
+    };
+  }, [profile?.id, loadInvites]);
 
   // Products
   const loadProducts = async () => {
@@ -245,29 +287,34 @@ const loadInvites = async (profileId: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ profile?.id ]);
+  }, [profile?.id]);
 
   // Load vendors
   const loadVendors = async () => {
-    if (!profile?.business_id) return;
+    if (!isOnline) {
+      console.log("Offline: skipping vendor fetch");
+      return;
+    }
 
     const { error, data } = await supabase
       .from("profiles")
       .select("*")
-      .eq("business_id", profile.business_id)
+      .eq("business_id", profile?.business_id)
       .eq("role", "vendor");
     setVendors(data || []);
     if (error) {
-   	console.error(error);
-	toast.error(error.message);
-       setVendorsLoading(false);	
-    };
+      console.error(error);
+      toast.error(error.message);
+      setVendorsLoading(false);
+    }
     setVendorsLoading(false);
   };
 
   useEffect(() => {
-    loadVendors();
-  }, [profile?.business_id, vendors]);
+    if (isOnline) {
+      loadVendors();
+    }
+  }, [profile?.business_id, isOnline]);
 
   useEffect(() => {
     if (!profile?.business_id) return;
@@ -298,7 +345,7 @@ const loadInvites = async (profileId: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ profile?.id ]);
+  }, [profile?.id]);
 
   // Load Transactions
 
@@ -306,7 +353,9 @@ const loadInvites = async (profileId: string) => {
     setTransactionsLoading(true);
     const { data, error } = await supabase
       .from("transactions")
-      .select("*, created_by_email:profiles!transactions_created_by_fkey(email)")
+      .select(
+        "*, created_by_email:profiles!transactions_created_by_fkey(email)"
+      )
       .eq("business_id", profile?.business_id)
       .order("created_at", { ascending: false });
 
@@ -341,7 +390,10 @@ const loadInvites = async (profileId: string) => {
           console.log("Realtime transaction change:", payload);
           if (payload.eventType === "INSERT") {
             setTransactionsLoading(true);
-            setTransactions((prev) => [ ...prev, payload.new as TransactionProps ]);
+            setTransactions((prev) => [
+              ...prev,
+              payload.new as TransactionProps,
+            ]);
             setTransactionsLoading(false);
           } else if (payload.eventType === "UPDATE") {
             setTransactionsLoading(true);
@@ -367,7 +419,7 @@ const loadInvites = async (profileId: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ profile?.id ]);
+  }, [profile?.id]);
 
   // Login Signup
   const signUpNewUser = async (email: string, password: string) => {
@@ -427,14 +479,14 @@ const loadInvites = async (profileId: string) => {
         reloadProfile,
         invites,
         invitesLoading,
-	setInvites,
+        setInvites,
         businessName,
         products,
         productsLoading,
         vendors,
         vendorsLoading,
-      	setVendors, 
-       	transactions,
+        setVendors,
+        transactions,
         setTransactions,
         transactionsLoading,
 

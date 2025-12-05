@@ -25,12 +25,13 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
 import { Loader2 } from "lucide-react";
+import { offlineDB } from "@/lib/offlineDB";
+import { useOnlineStatus } from "@/hook/useOnlineStatus";
 
 type TransactionFormProps = z.infer<typeof transactionSchema>;
 
 export default function AddTransaction() {
   const { products, profile } = useAuth();
-
   const {
     control,
     register,
@@ -53,7 +54,9 @@ export default function AddTransaction() {
   const [total, setTotal] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmitted, setLastSubmitted] = useState<number | null>(null);
-
+  const isOnline = useOnlineStatus();
+  const { setTransactions } = useAuth();
+  console.log({ isOnline });
   const isDuplicateTransaction = async (
     productId: string,
     createdBy: string,
@@ -78,85 +81,109 @@ export default function AddTransaction() {
   };
 
   const handleFormSubmit = async (data: TransactionFormProps) => {
-    setIsSubmitting(true);
+	  console.log("isOnline?:", isOnline);
+    if (!isOnline) {
+	    const offlineEntry = {
+	      id: crypto.randomUUID(),
+	      business_id: profile?.business_id,
+	      product_id: data.productId,
+	      amount: data.amount,
+	      created_by: profile?.id,
+	      created_at: new Date().toISOString(),
+	      verified: false,
+	      is_offline: true,
+	    };
+	
+	    await offlineDB.put("pending_transactions", offlineEntry);
+	
+	    setTransactions(prev => [offlineEntry, ...prev]);
+	
+	    toast.success("Saved offline! Will sync when online.");
+	    return;
+	  }    
+    try {
+      setIsSubmitting(true);
 
-    const now = new Date();
+      const now = new Date();
 
-    if (lastSubmitted && now.getTime() - lastSubmitted < 60000) {
-      setIsSubmitting(false);
-      toast.warning(
-        "Please wait a minute before submitting another transaction."
-      );
-      return;
-    }
-    const product = products.find((p) => p.id === data.productId);
-
-    if (!profile?.business_id) {
-      setIsSubmitting(false); 
-      toast.error("Missing business context.");
-      return;
-    }
-
-    const duplicate = await isDuplicateTransaction(
-      data.productId,
-      profile.id,
-      profile.business_id
-    );
-
-    if (duplicate) {
-      setIsSubmitting(false);
-      toast.warning("Duplicate transaction detected in the last 2 minutes.");
-      return;
-    }
-
-    if (product && typeof product.stock === "number") {
-      const { error: updateError } = await supabase
-        .from("products")
-        .update({
-          stock: product.stock - data.amount,
-        })
-        .eq("id", product.id);
-
-      if (updateError) {
-     	setIsSubmitting(false); 
-        console.error("Stock update failed:", updateError);
-        toast.error("Failed to update product stock.");
+      if (lastSubmitted && now.getTime() - lastSubmitted < 60000) {
+        setIsSubmitting(false);
+        toast.warning(
+          "Please wait a minute before submitting another transaction."
+        );
         return;
       }
-    } else {
-     	setIsSubmitting(false);
-	toast.error("Selected product not found or stock is invalid.");
-      return;
-    }
+      const product = products.find((p) => p.id === data.productId);
 
-    const { error } = await supabase.from("transactions").insert({
-      business_id: profile.business_id,
-      product_id: data.productId,
-      amount: data.amount,
-      created_by: profile.id,
-      verified: false,
-    });
+      if (!profile?.business_id) {
+        setIsSubmitting(false);
+        toast.error("Missing business context.");
+        return;
+      }
 
-    if (error) {
-      setIsSubmitting(false); 
-      console.error("Insert failed:", error);
-      toast.error("Failed to add transaction.");
-      return;
+      const duplicate = await isDuplicateTransaction(
+        data.productId,
+        profile.id,
+        profile.business_id
+      );
+
+      if (duplicate) {
+        setIsSubmitting(false);
+        toast.warning("Duplicate transaction detected in the last 2 minutes.");
+        return;
+      }
+
+      if (product && typeof product.stock === "number") {
+        const { error: updateError } = await supabase
+          .from("products")
+          .update({
+            stock: product.stock - data.amount,
+          })
+          .eq("id", product.id);
+
+        if (updateError) {
+          setIsSubmitting(false);
+          console.error("Stock update failed:", updateError);
+          toast.error("Failed to update product stock.");
+          return;
+        }
+      } else {
+        setIsSubmitting(false);
+        toast.error("Selected product not found or stock is invalid.");
+        return;
+      }
+
+      const { error } = await supabase.from("transactions").insert({
+        business_id: profile.business_id,
+        product_id: data.productId,
+        amount: data.amount,
+        created_by: profile.id,
+        verified: false,
+      });
+
+      if (error) {
+        setIsSubmitting(false);
+        console.error("Insert failed:", error);
+        toast.error("Failed to add transaction.");
+        return;
+      }
+      toast.success("Transaction created!");
+      setLastSubmitted(now.getTime());
+     
+    } catch (err) {
+	console.error(err);
+        toast.error("Failed to create transactions.");	
+    } finally {	
+        setIsSubmitting(false);
+	setPrice("");
+	setTotal("");
+	reset();
     }
-    setIsSubmitting(false); 
-    toast.success("Transaction created!");
-    setLastSubmitted(now.getTime());
-    setPrice("");
-    setTotal("");
-    reset();
   };
 
   return (
     <Card>
-      <form
-        onSubmit={handleSubmit(handleFormSubmit)}
-        className="space-y-3"
-      >
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3">
         <CardHeader>
           <CardTitle className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
             Add Transaction
@@ -244,7 +271,13 @@ export default function AddTransaction() {
             ""
           )}
 
-	  {isSubmitting ? (<div><Loader2 className={"animate-spin"} /></div>) : ""}
+          {isSubmitting ? (
+            <div>
+              <Loader2 className={"animate-spin"} />
+            </div>
+          ) : (
+            ""
+          )}
         </CardContent>
         <CardFooter>
           <Button type="submit" className="w-full mt-2.5">

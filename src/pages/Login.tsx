@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import {Eye, EyeOff, Lock } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -43,7 +44,7 @@ type FormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState();
   const navigate = useNavigate();
   const { signInUser, signUpNewUser, profile } = useAuth();
 
@@ -134,7 +135,19 @@ const Login = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...register("password")} />
+              <div className="relative"> 
+	      	<Input id="password" type={showPassword ? "text" : "password"} {...register("password")} />
+	     	<Button
+		size="icon"
+              	type="button" 
+	       	onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 rounded-l-none  flex items-center hover:text-gray-100"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </Button>
+ 
+	      </div>
               {errors.password && (
                 <p className="text-red-500 text-xs">
                   {errors.password.message}
@@ -144,7 +157,7 @@ const Login = () => {
             {mode === "signup" && (
               <div className="space-y-2">
                 <Label>Confirm Password</Label>
-                <Input type="password" {...register("confirmPassword")} />
+                <Input type={showPassword ? "text" : "password"} {...register("confirmPassword")} />
                 {errors.confirmPassword && (
                   <p className="text-red-500 text-xs">
                     {errors.confirmPassword.message}
@@ -154,7 +167,9 @@ const Login = () => {
             )}
           </CardContent>
 	  <CardAction className="mx-4">
-	 	<Button variant="link" onClick={() => navigate("/forgot-password")}>Forgot Password?</Button> 
+	 	<Button variant="link" type="button" onClick={() => navigate("/forgot-password")}>
+			Forgot Password?
+		</Button> 
 	  </CardAction>
           <CardFooter className="flex flex-col gap-4">   
 	  <Button type="submit" disabled={loading} className="w-full">
