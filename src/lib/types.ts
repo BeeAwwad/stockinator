@@ -12,6 +12,7 @@ export type ProductProps = {
   sku: string;
   price: number;
   stock: number;
+  business_id: string;
   created_at: Date;
 };
 

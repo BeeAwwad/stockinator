@@ -20,18 +20,19 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
-import { Loader2 } from "lucide-react";
 import { offlineDB } from "@/lib/offlineDB";
 import { useOnlineStatus } from "@/hook/useOnlineStatus";
 
 type TransactionFormProps = z.infer<typeof transactionSchema>;
 
 export default function AddTransaction() {
-  const { products, profile } = useAuth();
+  const { products, profile, setTransactions, setTransactionsLoading } = useAuth();
   const {
     control,
     register,
@@ -55,7 +56,7 @@ export default function AddTransaction() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmitted, setLastSubmitted] = useState<number | null>(null);
   const isOnline = useOnlineStatus();
-  const { setTransactions } = useAuth();
+
   console.log({ isOnline });
   const isDuplicateTransaction = async (
     productId: string,
@@ -81,26 +82,31 @@ export default function AddTransaction() {
   };
 
   const handleFormSubmit = async (data: TransactionFormProps) => {
-	  console.log("isOnline?:", isOnline);
     if (!isOnline) {
-	    const offlineEntry = {
-	      id: crypto.randomUUID(),
-	      business_id: profile?.business_id,
-	      product_id: data.productId,
-	      amount: data.amount,
-	      created_by: profile?.id,
-	      created_at: new Date().toISOString(),
-	      verified: false,
-	      is_offline: true,
-	    };
-	
-	    await offlineDB.put("pending_transactions", offlineEntry);
-	
-	    setTransactions(prev => [offlineEntry, ...prev]);
-	
-	    toast.success("Saved offline! Will sync when online.");
-	    return;
-	  }    
+      if (!profile || !profile.id) {
+        toast.error("Cannot save offline transaction: User not logged in.");
+        return;
+      }
+      setTransactionsLoading(true);
+      const offlineEntry = {
+        id: crypto.randomUUID(),
+        business_id: profile?.business_id,
+        product_id: data.productId,
+        amount: data.amount,
+        created_by: profile.id,
+        created_at: new Date(),
+        verified: false,
+        is_offline: true,
+      };
+
+      await offlineDB.put("pending_transactions", offlineEntry);
+
+      setTransactions((prev) => [offlineEntry, ...prev]);
+      setTransactionsLoading(false);
+      toast.success("Saved offline! Will sync when online.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -152,7 +158,7 @@ export default function AddTransaction() {
         toast.error("Selected product not found or stock is invalid.");
         return;
       }
-
+      setTransactionsLoading(true);
       const { error } = await supabase.from("transactions").insert({
         business_id: profile.business_id,
         product_id: data.productId,
@@ -169,15 +175,15 @@ export default function AddTransaction() {
       }
       toast.success("Transaction created!");
       setLastSubmitted(now.getTime());
-     
     } catch (err) {
-	console.error(err);
-        toast.error("Failed to create transactions.");	
-    } finally {	
-        setIsSubmitting(false);
-	setPrice("");
-	setTotal("");
-	reset();
+      console.error(err);
+      toast.error("Failed to create transactions.");
+    } finally {
+      setIsSubmitting(false);
+      setTransactionsLoading(false);
+      setPrice("");
+      setTotal("");
+      reset();
     }
   };
 
@@ -185,8 +191,16 @@ export default function AddTransaction() {
     <Card>
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3">
         <CardHeader>
-          <CardTitle className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
-            Add Transaction
+          <CardTitle className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 flex justify-between">
+            <p>Add Transaction</p>
+            {isSubmitting ? (
+              <Badge>
+                <Spinner />
+                Submitting
+              </Badge>
+            ) : (
+              ""
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2.5">
@@ -267,14 +281,6 @@ export default function AddTransaction() {
                 <p>Total: ₦{total}</p>
               </div>
             </>
-          ) : (
-            ""
-          )}
-
-          {isSubmitting ? (
-            <div>
-              <Loader2 className={"animate-spin"} />
-            </div>
           ) : (
             ""
           )}

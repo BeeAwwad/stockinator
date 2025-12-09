@@ -20,50 +20,56 @@ const VendorAndInviteList = () => {
     id: string;
     type: "vendor" | "invite";
   } | null>(null);
-  const { profile, vendorsLoading, vendors, invitesLoading, invites, setInvites } =
-    useAuth();
+  const {
+    profile,
+    vendorsLoading,
+    vendors,
+    setVendors,
+    invitesLoading,
+    invites,
+    setInvites,
+  } = useAuth();
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
     const { id, type } = pendingDelete;
-        
-      if (type === "vendor") {
-	const removedVendor = vendors.find((v) => v.id === id);
-	setVendor((prev) => prev.filter((v) => v.id !== id));
 
-        const { error } = await supabase
-          .from("profiles")
-          .update({ business_id: null, role: "unassigned" })
-          .eq("id", id);
+    if (type === "vendor") {
+      const removedVendor = vendors.find((v) => v.id === id);
+      setVendors((prev) => prev.filter((v) => v.id !== id));
 
-        if (error) {
-		console.log("error removing vendors:", error);	
-		toast.error("Failed to remove vendor");
-		
-		if (removedVendor) {
-			setVendors((prev) => [...prev, removedVendor]);	
-		}	
-	} 
-	  
-	  toast.success("Vendor removed.");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ business_id: null, role: "unassigned" })
+        .eq("id", id);
 
-      } else {
-	const canceledInvite = invites.find((i) => i.id === id);
-	setInvites((prev) => prev.filter((i) => i.id !== id));
+      if (error) {
+        console.log("error removing vendors:", error);
+        toast.error("Failed to remove vendor");
 
-        const { error } = await supabase.from("invites").delete().eq("id", id);
-      	
-        if (error) {
-		console.log("error canceling invite:", error);
-		toast.error("Failed to cancel invite");		
-		
-		if (canceledInvite) {
-			setInvites((prev) => [...prev, canceledInvite]);	
-		}	
-	} 	
-       	toast.success("Invite cancelled.");
-    } 
-      setPendingDelete(null);
+        if (removedVendor) {
+          setVendors((prev) => [...prev, removedVendor]);
+        }
+      }
+
+      toast.success("Vendor removed.");
+    } else {
+      const canceledInvite = invites.find((i) => i.id === id);
+      setInvites((prev) => prev.filter((i) => i.id !== id));
+
+      const { error } = await supabase.from("invites").delete().eq("id", id);
+
+      if (error) {
+        console.log("error canceling invite:", error);
+        toast.error("Failed to cancel invite");
+
+        if (canceledInvite) {
+          setInvites((prev) => [...prev, canceledInvite]);
+        }
+      }
+      toast.success("Invite cancelled.");
+    }
+    setPendingDelete(null);
   };
 
   if (!profile?.business_id) return;
@@ -76,12 +82,12 @@ const VendorAndInviteList = () => {
       </div>
     );
   } else if (invitesLoading) {
- 	return (
+    return (
       <div className="flex space-x-2.5">
         <p>Loading invites</p>
         <Loader2 className="animate-spin" />
       </div>
-    ); 
+    );
   }
 
   return (
@@ -97,9 +103,10 @@ const VendorAndInviteList = () => {
               key={v.id}
               className="flex justify-between items-center bg-green-50 p-2 rounded"
             >
-              <div>{v.email || `Vendor ${i + 1}`}
-	     	<span className="text-xs text-green-600 ml-2">(Vendor)</span> 
-	      </div>
+              <div>
+                {v.email || `Vendor ${i + 1}`}
+                <span className="text-xs text-green-600 ml-2">(Vendor)</span>
+              </div>
               {profile.role === "owner" && (
                 <Button
                   variant="ghost"

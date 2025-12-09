@@ -85,8 +85,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
     setProfileLoading(false);
   };
-  
-useEffect(() => {
+
+  useEffect(() => {
     initialize();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
@@ -106,33 +106,32 @@ useEffect(() => {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-async function syncOfflineTransactions() {
-  const pending = await offlineDB.getAll("pending_transactions");
+  async function syncOfflineTransactions() {
+    const pending = await offlineDB.getAll("pending_transactions");
 
-  for (const tx of pending) {
-    const { is_offline, id, ...cleanTx} = tx;
+    setTransactionsLoading(true);
+    for (const tx of pending) {
+      const { is_offline, id, ...cleanTx } = tx;
+      console.log("removing offline flags:", is_offline, id);
+      const { data, error } = await supabase
+        .from("transactions")
+        .insert(cleanTx)
+        .select()
+        .single();
 
-    const { data, error } = await supabase
-      .from("transactions")
-      .insert(cleanTx)
-      .select()
-      .single();
+      if (!error) {
+        await offlineDB.delete("pending_transactions", tx.id);
 
-    if (!error) {
-      await offlineDB.delete("pending_transactions", tx.id);
-
-      setTransactions(prev =>
-        prev.map(t => (t.id === tx.id ? data : t))
-      );
-
-      toast.success("transactions synced");
+        setTransactions((prev) => prev.map((t) => (t.id === tx.id ? data : t)));
+        setTransactionsLoading(false);
+        toast.success("transactions synced");
+      }
     }
   }
-}
 
-useEffect(() => {
-  if (isOnline) syncOfflineTransactions();
-}, [isOnline]);
+  useEffect(() => {
+    if (isOnline) syncOfflineTransactions();
+  }, [isOnline]);
 
   const loadBusinessName = async () => {
     if (!profile) return;
@@ -164,7 +163,7 @@ useEffect(() => {
       loadBusinessName();
       loadProducts();
     }
-  }, [profile?.id]);
+  }, [profile?.id, profile?.business_id]);
 
   // Load Invites
   const loadInvites = async (profileId: string) => {
@@ -369,9 +368,9 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profile?.business_id) return;
     loadTransactions();
-  }, [profile?.id]);
+  }, [profile?.business_id]);
 
   useEffect(() => {
     if (!profile?.business_id) return;
@@ -482,13 +481,16 @@ useEffect(() => {
         setInvites,
         businessName,
         products,
+	setProducts,
         productsLoading,
+	setProductsLoading,
         vendors,
         vendorsLoading,
         setVendors,
         transactions,
         setTransactions,
         transactionsLoading,
+        setTransactionsLoading,
 
         signUpNewUser,
         signInUser,

@@ -17,13 +17,16 @@ interface AuthContextType {
   setInvites: Dispatch<SetStateAction<InviteProps[]>>;
   businessName: string;
   products: ProductProps[] | [];
+  setProducts: Dispatch<SetStateAction<ProductProps[]>>;
   productsLoading: boolean;
+  setProductsLoading: Dispatch<SetStateAction<TransactionProps[]>>;
   vendors: ProfileProps[] | [];
   vendorsLoading: boolean;
   setVendors: Dispatch<SetStateAction<ProfileProps[]>>;
   transactions: TransactionProps[] | [];
   setTransactions: Dispatch<SetStateAction<TransactionProps[]>>;
   transactionsLoading: boolean;
+  setTransactionsLoading: Dispatch<SetStateAction<boolean>>;
 
   reloadProfile: () => Promise<void>;
   signUpNewUser: (
@@ -48,13 +51,16 @@ export const AuthContext = createContext<AuthContextType>({
   setInvites: (() => {}) as Dispatch<SetStateAction<InviteProps[]>>,
   businessName: "",
   products: [],
+  setProducts: (() => {}) as Dispatch<SetStateAction<ProductProps[]>>,
   productsLoading: true,
+  setProductsLoading: (() => {}) as Dispatch<SetStateAction<ProfileProps[]>>,
   vendors: [],
   vendorsLoading: true,
   setVendors: (() => {}) as Dispatch<SetStateAction<ProfileProps[]>>,
   transactions: [],
-  transactionsLoading: true,
   setTransactions: (() => {}) as Dispatch<SetStateAction<TransactionProps[]>>,
+  transactionsLoading: true,
+  setTransactionsLoading: (() => {}) as Dispatch<SetStateAction<boolean>>,
 
   reloadProfile: async () => {},
 

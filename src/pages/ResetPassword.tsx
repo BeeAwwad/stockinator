@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { passwordResetSchema } from "@/lib/schemas";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -13,7 +13,6 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-  CardAction,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +24,8 @@ type ResetPasswordFormProps = z.infer<typeof passwordResetSchema>;
 const ResetPasswordForm = () => {
   const navigate = useNavigate();
   const { 
-	control,
         register,
 	handleSubmit,
- 	reset,
-	getValues,
 	formState: { errors },	
   } = useForm<ResetPasswordFormProps>({
  	resolvers: zodResolver(passwordResetSchema),
@@ -42,7 +38,7 @@ const ResetPasswordForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-   const onSubmit = async (data: UpdateResetFormProps) => {
+   const onSubmit = async (data: ResetPasswordFormProps) => {
     try {
      setIsLoading(true);
      const { newPassword } = data;
