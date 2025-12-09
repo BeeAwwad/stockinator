@@ -1,17 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import { supabase } from "@/lib/supabaseClient";
+import { Spinner } from "./ui/spinner";
 import { useAuth } from "@/hook/useAuth";
+import { Activity } from "react";
 
 const Header = () => {
-  const { profile } = useAuth();
-
-  const navigate = useNavigate();
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
-  };
+  const { profile, signOutLoading, signOutUser } = useAuth();
 
   return (
     <header className="bg-gray-800">
@@ -24,7 +18,7 @@ const Header = () => {
             Stockinator
           </Link>
           <div className="flex space-x-4">
-            {profile?.business_id && (
+            <Activity mode={profile?.business_id ? "visible" : "hidden"}>
               <>
                 <Link to="/products" className="hover:underline">
                   Products
@@ -33,32 +27,30 @@ const Header = () => {
                   Transactions
                 </Link>
               </>
-            )}
-
-            {!profile || profile.business_id ? (
-              <></>
-            ) : (
+	    </Activity>
+            <Activity mode={!profile || profile.business_id ? "hidden" : "visible"}>
               <>
                 <Link to="/register-business" className="hover:underline">
                   Create Business
                 </Link>
               </>
-            )}
+            </Activity>
 
-            {profile && (
+            <Activity mode={profile ? "visible" : "hidden"}>
               <Link to="/notifications" className="hover:underline">
                 Notifications
               </Link>
-            )}
+            </Activity>
           </div>
-          {profile && (
+          <Activity mode={profile ? "visible" : "hidden"}>
             <Button
-              onClick={logout}
+              onClick={signOutUser}
               className="bg-rose-500 px-3 py-1 hover:bg-rose-600"
             >
+   	      <Activity mode={signOutLoading ? "visible" : "hidden"}><Spinner /></Activity> 
               Sign Out
             </Button>
-          )}
+          </Activity>
         </div>
       </nav>
     </header>

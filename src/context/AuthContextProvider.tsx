@@ -12,6 +12,7 @@ import type {
 import { AuthContext } from "./AuthContext";
 import { useOnlineStatus } from "@/hook/useOnlineStatus";
 import { offlineDB } from "@/lib/offlineDB";
+import { useNavigate } from "react-router-dom";
 
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -27,7 +28,9 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [vendorsLoading, setVendorsLoading] = useState(true);
   const [transactions, setTransactions] = useState<TransactionProps[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [signOutLoading, setSignOutLoading] = useState(false);
   const isOnline = useOnlineStatus();
+  const navigate = useNavigate();
 
   const loadProfile = async (userId: string) => {
     try {
@@ -236,6 +239,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
   // Products
   const loadProducts = async () => {
+    if (!profile?.business_id) return;
     setProductsLoading(true);
     const { data, error } = await supabase
       .from("products")
@@ -303,7 +307,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     setVendors(data || []);
     if (error) {
       console.error(error);
-      toast.error(error.message);
+      toast.error("Failed to load vendors");
       setVendorsLoading(false);
     }
     setVendorsLoading(false);
@@ -429,7 +433,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     });
     if (error) {
       console.log("Error signing up:", error);
-      toast.error(error.message);
+      toast.error("Failed to sign-up");
       return { success: false, error: error.message };
     }
     toast.success("Sign-up successful!");
@@ -437,13 +441,15 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOutUser = async () => {
+    setSignOutLoading(true);
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error("Error signing out:", error.message);
-      toast.error(error.message);
-    } else {
-      toast.success("Signed out successfully!");
+      toast.error("Failed to sign-out");
     }
+    setSignOutLoading(false);
+    navigate("/login");
+    toast.success("Signed out successfully!");
   };
 
   const signInUser = async (email: string, password: string) => {
@@ -453,7 +459,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         password,
       });
       if (error) {
-        toast.error(error.message);
+        console.error(error.message);
+        toast.error("Failed to sign-in");
         return { success: false, error: error.message };
       }
       toast.success("Sign-in successful!");
@@ -481,9 +488,9 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         setInvites,
         businessName,
         products,
-	setProducts,
+        setProducts,
         productsLoading,
-	setProductsLoading,
+        setProductsLoading,
         vendors,
         vendorsLoading,
         setVendors,
@@ -491,6 +498,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         setTransactions,
         transactionsLoading,
         setTransactionsLoading,
+        signOutLoading,
 
         signUpNewUser,
         signInUser,

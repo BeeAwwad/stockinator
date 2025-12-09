@@ -67,7 +67,15 @@ export default function TransactionList() {
   const handleDelete = async (transactionId: string) => {
     if (profile?.role !== "owner") return;
     const deletedTx = transactions.find((t) => t.id === transactionId);
-    setTransactions((prev) => prev.filter((tx) => tx.id !== transactionId));
+    setTransactions((prev) =>
+      prev
+        .filter((tx) => tx.id !== transactionId)
+        .sort((a, b) => {
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        })
+    );
 
     const { error } = await supabase
       .from("transactions")
@@ -85,6 +93,10 @@ export default function TransactionList() {
 
     toast.success("Transaction deleted");
   };
+
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
   return (
     <>
       <Activity mode={transactionsLoading ? "visible" : "hidden"}>
@@ -92,12 +104,12 @@ export default function TransactionList() {
       </Activity>
       <Activity mode={transactionsLoading ? "hidden" : "visible"}>
         <div className="my-6 space-y-4">
-          {transactions.length === 0 && (
+          {sortedTransactions.length === 0 && (
             <p className="text-center text-muted-foreground text-sm">
               No transactions availabe yet : |
             </p>
           )}
-          {transactions.map((tx, i) => {
+          {sortedTransactions.map((tx, i) => {
             const product = products.find((p) => p.id === tx.product_id);
             return (
               <Card key={`${tx.id} ~ ${i}`}>

@@ -59,20 +59,20 @@ export default function ProductList() {
   };
 
   const handleDelete = async (id: string) => {
-   if (profile?.role !== "owner") return;
-   const deletedProduct = products.find((p) => p.id === id);
-   setProducts((prev) => prev.filter((p) => p.id !== id));
-   
+    if (profile?.role !== "owner") return;
+    const deletedProduct = products.find((p) => p.id === id);
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       console.error(error);
       toast.error("Failed to delete product.");
-      if (deltedProduct) {
-     	setProducts((prev) => [...prev, deletedProduct]); 
-     	return 
+      if (deletedProduct) {
+        setProducts((prev) => [...prev, deletedProduct]);
+        return;
       }
     }
-	toast.success("Product deleted");
+    toast.success("Product deleted");
   };
 
   return (

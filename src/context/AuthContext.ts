@@ -19,7 +19,7 @@ interface AuthContextType {
   products: ProductProps[] | [];
   setProducts: Dispatch<SetStateAction<ProductProps[]>>;
   productsLoading: boolean;
-  setProductsLoading: Dispatch<SetStateAction<TransactionProps[]>>;
+  setProductsLoading: Dispatch<SetStateAction<boolean>>;
   vendors: ProfileProps[] | [];
   vendorsLoading: boolean;
   setVendors: Dispatch<SetStateAction<ProfileProps[]>>;
@@ -27,6 +27,7 @@ interface AuthContextType {
   setTransactions: Dispatch<SetStateAction<TransactionProps[]>>;
   transactionsLoading: boolean;
   setTransactionsLoading: Dispatch<SetStateAction<boolean>>;
+  signOutLoading: boolean;
 
   reloadProfile: () => Promise<void>;
   signUpNewUser: (
@@ -53,7 +54,7 @@ export const AuthContext = createContext<AuthContextType>({
   products: [],
   setProducts: (() => {}) as Dispatch<SetStateAction<ProductProps[]>>,
   productsLoading: true,
-  setProductsLoading: (() => {}) as Dispatch<SetStateAction<ProfileProps[]>>,
+  setProductsLoading: (() => {}) as Dispatch<SetStateAction<boolean>>,
   vendors: [],
   vendorsLoading: true,
   setVendors: (() => {}) as Dispatch<SetStateAction<ProfileProps[]>>,
@@ -61,6 +62,7 @@ export const AuthContext = createContext<AuthContextType>({
   setTransactions: (() => {}) as Dispatch<SetStateAction<TransactionProps[]>>,
   transactionsLoading: true,
   setTransactionsLoading: (() => {}) as Dispatch<SetStateAction<boolean>>,
+  signOutLoading: false,
 
   reloadProfile: async () => {},
 

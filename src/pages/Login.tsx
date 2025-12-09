@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import {Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -90,7 +90,8 @@ const Login = () => {
       }
     } catch (error) {
       if (error instanceof Error) {
-        toast.error(error.message);
+        console.error(error.message);
+        toast.error(`Error during ${mode}: ${error.message}`);
       } else {
         toast.error(`An unexpected error occurred during ${mode}`);
       }
@@ -135,19 +136,26 @@ const Login = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <div className="relative"> 
-	      	<Input id="password" type={showPassword ? "text" : "password"} {...register("password")} />
-	     	<Button
-		size="icon"
-              	type="button" 
-	       	onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 rounded-l-none  flex items-center hover:text-gray-100"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </Button>
- 
-	      </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  {...register("password")}
+                />
+                <Button
+                  size="icon"
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 rounded-l-none  flex items-center hover:text-gray-100"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
               {errors.password && (
                 <p className="text-red-500 text-xs">
                   {errors.password.message}
@@ -157,7 +165,10 @@ const Login = () => {
             {mode === "signup" && (
               <div className="space-y-2">
                 <Label>Confirm Password</Label>
-                <Input type={showPassword ? "text" : "password"} {...register("confirmPassword")} />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  {...register("confirmPassword")}
+                />
                 {errors.confirmPassword && (
                   <p className="text-red-500 text-xs">
                     {errors.confirmPassword.message}
@@ -166,13 +177,17 @@ const Login = () => {
               </div>
             )}
           </CardContent>
-	  <CardAction className="mx-4">
-	 	<Button variant="link" type="button" onClick={() => navigate("/forgot-password")}>
-			Forgot Password?
-		</Button> 
-	  </CardAction>
-          <CardFooter className="flex flex-col gap-4">   
-	  <Button type="submit" disabled={loading} className="w-full">
+          <CardAction className="mx-4">
+            <Button
+              variant="link"
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Forgot Password?
+            </Button>
+          </CardAction>
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" disabled={loading} className="w-full">
               {loading
                 ? mode === "signup"
                   ? "Creating..."
