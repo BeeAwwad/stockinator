@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Activity } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -18,7 +18,7 @@ import { useAuth } from "@/hook/useAuth";
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { profile, invites, invitesLoading } = useAuth();
+  const { profile, invites, invitesLoading, reloadProfile } = useAuth();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedInvite, setSelectedInvite] = useState<InviteProps | null>(
     null
@@ -46,10 +46,12 @@ export default function Notifications() {
 
       const { error: updateInviteErr } = await supabase
         .from("invites")
-        .update({ status: "accepted" })
+        .delete()
         .eq("id", id);
 
       if (updateInviteErr) throw updateInviteErr;
+
+      await reloadProfile();
 
       toast.success("Invite accepted! You've joined the business.");
       setInviteDialogOpen(false);
@@ -87,40 +89,30 @@ export default function Notifications() {
       toast.error("Error declining invite.");
     }
   };
-  if (invitesLoading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <p>Loading Invites</p> <Loader2 className="animate-spin" />
-      </div>
-    );
-  }
 
   const personalInvites = invites.filter(
     (invite) => invite.invited_user_id === profile.id
   );
 
-  if (personalInvites.length === 0) {
-    return (
-      <div className="text-center py-10 text-muted-foreground">
-        No Notifications
-      </div>
-    );
-  }
+  console.log({ personalInvites });
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Notifications</h2>
 
-      {personalInvites.length === 0 && (
+      <Activity mode={personalInvites.length === 0 ? "visible" : "hidden"}>
         <p className="text-muted-foreground">No notifications</p>
-      )}
+      </Activity>
+
+      <Activity mode={invitesLoading ? "visible" : "hidden"}>
+     	<div className="flex justify-center items-center py-20">
+       	 <p>Loading Invites</p> <Loader2 className="animate-spin" />
+      	</div> 
+      </Activity>
 
       {personalInvites.map((invite) => (
-        <div
-          key={invite.id}
-          className="border rounded-lg p-4 shadow-sm bg-white"
-        >
-          {invite.status === "pending" && (
-            <div>
+            <div key={invite.id}
+            	 className="border rounded-lg p-4 shadow-sm bg-white">
               <p>
                 You’ve been invited by <strong>{invite.inviter?.email}</strong>{" "}
                 to join a business.
@@ -137,8 +129,6 @@ export default function Notifications() {
                 Respond
               </Button>
             </div>
-          )}
-        </div>
       ))}
 
       <AlertDialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>

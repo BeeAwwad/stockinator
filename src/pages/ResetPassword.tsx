@@ -28,7 +28,7 @@ const ResetPasswordForm = () => {
 	handleSubmit,
 	formState: { errors },	
   } = useForm<ResetPasswordFormProps>({
- 	resolvers: zodResolver(passwordResetSchema),
+ 	resolver: zodResolver(passwordResetSchema),
 	defaultValues: {
 		newPassword: "",
 		confirmPassword: "",		
