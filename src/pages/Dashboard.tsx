@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Activity } from "react";
 import InviteVendor from "@/components/InviteVendors";
 import VendorAndInviteList from "@/components/VendorAndInviteList";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,6 +13,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+} from "@/components/ui/item";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { twMerge } from "tailwind-merge";
@@ -29,19 +42,15 @@ const Dashboard = () => {
   const handleDelete = async (businessId: string) => {
     if (profile?.role !== "owner") return;
     try {
-      // Delete products
       await supabase.from("products").delete().eq("business_id", businessId);
 
-      // Delete transactions
       await supabase
         .from("transactions")
         .delete()
         .eq("business_id", businessId);
 
-      // Delete business
       await supabase.from("businesses").delete().eq("id", businessId);
 
-      // Reset all profiles for this business
       await supabase
         .from("profiles")
         .update({ business_id: null, role: "unassigned" })
@@ -57,67 +66,104 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="py-6">
-        <h1 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 w-fit">
+      <div className="py-6 space-y-6">
+        <h1 className="text-3xl scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">
           Dashboard
         </h1>
-
-        {profile && (
-          <div className="space-y-1">
-            {businessName ? (
-              <p className="mt-2">
-                Business Name:{" "}
-                <span className="font-semibold">{businessName}</span>
-              </p>
-            ) : (
-              <p className="mt-2 text-balance text-gray-500">
-                <Link to={"/notifications"}>
-                  <span className="text-amber-500 hover:underline">Join</span>
-                </Link>{" "}
-                or{" "}
-                <Link to={"/register-business"}>
-                  <span className="text-emerald-600 hover:underline">
-                    Create
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Business Overview
+              </CardTitle>
+              <CardDescription>Your business information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {businessName ? (
+                <p>
+                  <span className="font-semibold">Name:</span>{" "}
+                  <span className="text-sm text-muted-foreground">
+                    {businessName}
                   </span>
-                </Link>{" "}
-                a business to see more from the dashboard
-              </p>
-            )}
-            {profile.role === "owner" && (
-              <>
-                <p>
-                  User:{" "}
-                  <span className="font-semibold">{profile.display_name}</span>
                 </p>
-                <p>You are the owner of this business.</p>
-              </>
-            )}
-            {profile.role === "vendor" && (
-              <>
-                <p>
-                  User:{" "}
-                  <span className="font-semibold">{profile.display_name}</span>
+              ) : (
+                <p className="text-muted-foreground">
+                  <Link
+                    to="/notifications"
+                    className="text-amber-600 underline"
+                  >
+                    Join
+                  </Link>{" "}
+                  or{" "}
+                  <Link
+                    to="/register-business"
+                    className="text-emerald-600 underline"
+                  >
+                    create
+                  </Link>{" "}
+                  a business to see more details.
                 </p>
-                <p>You are a vendor for this business.</p>
-              </>
-            )}
-          </div>
-        )}
-        {profile?.role === "owner" && (
-          <Button
-            className="mt-4 bg-rose-500"
-            onClick={() => {
-              setBusinessId(profile.business_id);
-              setDeleteDialogOpen(true);
-            }}
-          >
-            Delete Business
-          </Button>
-        )}
-      </div>
+              )}
 
-      <InviteVendor />
-      <VendorAndInviteList />
+              <Activity mode={profile ? "visible" : "hidden"}>
+                <>
+                  <p>
+                    <span className="font-semibold">User:</span>{" "}
+                    <span className="text-sm text-muted-foreground">
+                      {profile?.display_name}
+                    </span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    You are{" "}
+                    <span className="font-medium">({profile?.role})</span> in
+                    this business.
+                  </p>
+                </>
+              </Activity>
+            </CardContent>
+            <CardContent>
+              <Activity mode={profile?.role === "owner" ? "visible" : "hidden"}>
+                <Item variant="outline" className="transition-colors">
+                  <ItemContent>
+                    <ItemDescription>
+                      Permanently delete your business and all data.
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions>
+                    <Button
+                      variant="outline"
+		      className="hover:border-red-300 hover:text-red-500 text-sm"
+                      onClick={() => {
+                        setBusinessId(profile?.business_id ?? null);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      Delete Business
+                    </Button>
+                  </ItemActions>
+                </Item>
+              </Activity>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Team & Invites
+              </CardTitle>
+              <CardDescription>Manage your team members</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <InviteVendor />
+            </CardContent>
+
+            <CardContent>
+              <VendorAndInviteList />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

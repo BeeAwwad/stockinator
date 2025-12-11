@@ -1,6 +1,13 @@
 import { useState, Activity } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemActions,
+} from "@/components/ui/item";
+import { Loader2, Bell } from "lucide-react";
 import { toast } from "sonner";
 import type { InviteProps } from "@/lib/types";
 import { useNavigate } from "react-router-dom";
@@ -98,37 +105,42 @@ export default function Notifications() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Notifications</h2>
+      <h2 className="text-3xl scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">Notifications</h2>
 
       <Activity mode={personalInvites.length === 0 ? "visible" : "hidden"}>
         <p className="text-muted-foreground">No notifications</p>
       </Activity>
 
       <Activity mode={invitesLoading ? "visible" : "hidden"}>
-     	<div className="flex justify-center items-center py-20">
-       	 <p>Loading Invites</p> <Loader2 className="animate-spin" />
-      	</div> 
+        <div className="flex justify-center items-center py-20">
+          <p>Loading Invites</p> <Loader2 className="animate-spin" />
+        </div>
       </Activity>
 
       {personalInvites.map((invite) => (
-            <div key={invite.id}
-            	 className="border rounded-lg p-4 shadow-sm bg-white">
-              <p>
-                You’ve been invited by <strong>{invite.inviter?.email}</strong>{" "}
-                to join a business.
-              </p>
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedInvite(invite);
-                  setInviteDialogOpen(true);
-                }}
-                className="mt-2"
-              >
-                Respond
-              </Button>
-            </div>
+        <Item key={invite.id}>
+          <ItemMedia>
+            <Bell className="size-5" />
+          </ItemMedia>
+          <ItemContent>
+            <ItemDescription>
+              You’ve been invited by <strong>{invite.inviter?.email}</strong> to
+              join a business.
+            </ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedInvite(invite);
+                setInviteDialogOpen(true);
+              }}
+              className="mt-2"
+            >
+              Respond
+            </Button>
+          </ItemActions>
+        </Item>
       ))}
 
       <AlertDialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>

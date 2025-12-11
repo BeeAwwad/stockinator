@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Activity } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -10,6 +10,13 @@ import {
   AlertDialogAction,
   AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemActions,
+} from "@/components/ui/item";
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/hook/useAuth";
@@ -97,51 +104,55 @@ const VendorAndInviteList = () => {
       {vendors.length === 0 && invites.length === 0 ? (
         <p className="text-sm text-gray-500">No vendors yet.</p>
       ) : (
-        <ul className="space-y-2">
+        <div className="space-y-2">
           {vendors.map((v, i) => (
-            <li
-              key={v.id}
-              className="flex justify-between items-center bg-green-50 p-2 rounded"
-            >
-              <div>
+            <Item variant="outline" className="transition-colors" key={v.id}>
+              <ItemContent>
+	      	<ItemDescription>
                 {v.email || `Vendor ${i + 1}`}
                 <span className="text-xs text-green-600 ml-2">(Vendor)</span>
-              </div>
-              {profile.role === "owner" && (
+		</ItemDescription>
+              </ItemContent>
+	      <ItemActions>
+              <Activity mode={profile.role === "owner" ? "visible" : "hidden"}>
                 <Button
-                  variant="ghost"
-                  className="text-red-600 hover:underline text-sm"
+                  variant="outline"
+                  className="hover:border-red-300 hover:text-red-500 text-sm"
                   onClick={() => setPendingDelete({ id: v.id, type: "vendor" })}
                 >
                   Remove
                 </Button>
-              )}
-            </li>
+              </Activity>
+	      </ItemActions>
+            </Item>
           ))}
 
           {invites.map((invite) => (
-            <li
+            <Item variant="outline" 
               key={invite.id}
-              className="flex justify-between items-center bg-yellow-50 p-2 rounded"
             >
-              <div>
+              <ItemContent>
+	       <ItemDescription>
                 {invite.invited?.email}
                 <span className="text-xs text-yellow-600 ml-2">(Invited)</span>
-              </div>
-              {profile.role === "owner" && (
+	       </ItemDescription>
+              </ItemContent>
+	      <ItemActions>
+              <Activity mode={profile.role === "owner" ? "visible" : "hidden"}>
                 <Button
-                  variant="ghost"
-                  className="text-red-600 hover:underline text-sm"
+                  variant="outline"
+                  className="hover:text-red-300 hover:border-red-500 text-sm"
                   onClick={() =>
                     setPendingDelete({ id: invite.id, type: "invite" })
                   }
                 >
                   Cancel
                 </Button>
-              )}
-            </li>
+	      </Activity>
+	     </ItemActions>
+            </Item>
           ))}
-        </ul>
+        </div>
       )}
 
       {/* Delete confirmation */}
