@@ -78,12 +78,15 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         await loadProfile(session.user.id);
       } catch {
         if (catchedProfile) setProfile(JSON.parse(catchedProfile));
+        setProfileLoading(false);
       }
     } else if (catchedProfile) {
       setProfile(JSON.parse(catchedProfile));
+      setProfileLoading(false);
     } else {
       setUser(null);
       setProfile(null);
+      setProfileLoading(false);
     }
 
     setProfileLoading(false);
@@ -160,7 +163,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     setTransactions([]);
 
     if (profile?.id) {
-      loadInvites(profile.id);
+      loadInvites();
     }
     if (profile?.business_id) {
       loadBusinessName();
@@ -169,8 +172,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   }, [profile?.id, profile?.business_id]);
 
   // Load Invites
-  const loadInvites = async (profileId: string) => {
-    if (!profileId || !profile) return;
+  const loadInvites = async () => {
+    if (!isOnline || !profile?.id) return;
 
     setInvitesLoading(true);
 
@@ -223,10 +226,10 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         (payload) => {
           if (payload.eventType === "INSERT") {
             console.log("invite inserted");
-            loadInvites(profile.id);
+            loadInvites();
           } else if (payload.eventType === "DELETE") {
             console.log("invite deleted");
-            loadInvites(profile.id);
+            loadInvites();
           }
         }
       )
@@ -239,7 +242,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
   // Products
   const loadProducts = async () => {
-    if (!profile?.business_id) return;
+    if (!isOnline || !profile?.business_id) return;
     setProductsLoading(true);
     const { data, error } = await supabase
       .from("products")
@@ -294,10 +297,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
   // Load vendors
   const loadVendors = async () => {
-    if (!isOnline) {
-      console.log("Offline: skipping vendor fetch");
-      return;
-    }
+    if (!isOnline || !profile?.id) return;
 
     const { error, data } = await supabase
       .from("profiles")
@@ -353,6 +353,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   // Load Transactions
 
   const loadTransactions = async () => {
+    if (!isOnline || !profile?.id) return;
+
     setTransactionsLoading(true);
     const { data, error } = await supabase
       .from("transactions")

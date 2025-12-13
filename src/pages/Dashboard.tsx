@@ -71,7 +71,7 @@ const Dashboard = () => {
           Dashboard
         </h1>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+          <Card className="rounded shadow-none border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Business Overview
@@ -123,7 +123,10 @@ const Dashboard = () => {
             </CardContent>
             <CardContent>
               <Activity mode={profile?.role === "owner" ? "visible" : "hidden"}>
-                <Item variant="outline" className="transition-colors">
+                <Item
+                  variant="outline"
+                  className="transition-colors rounded shadow-none border"
+                >
                   <ItemContent>
                     <ItemDescription>
                       Permanently delete your business and all data.
@@ -132,7 +135,7 @@ const Dashboard = () => {
                   <ItemActions>
                     <Button
                       variant="destructive"
-                      className="text-sm"
+                      className="text-sm rounded"
                       onClick={() => {
                         setBusinessId(profile?.business_id ?? null);
                         setDeleteDialogOpen(true);
@@ -146,7 +149,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded shadow-none border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Team & Invites

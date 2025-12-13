@@ -105,7 +105,11 @@ const VendorAndInviteList = () => {
       ) : (
         <div className="space-y-2">
           {vendors.map((v, i) => (
-            <Item variant="outline" className="transition-colors" key={v.id}>
+            <Item
+              variant="outline"
+              className="transition-colors rounded shadow-none border"
+              key={v.id}
+            >
               <ItemContent>
                 <ItemDescription>
                   {v.email || `Vendor ${i + 1}`}
@@ -118,7 +122,7 @@ const VendorAndInviteList = () => {
                 >
                   <Button
                     variant="destructive"
-                    className="text-sm"
+                    className="text-sm rounded"
                     onClick={() =>
                       setPendingDelete({ id: v.id, type: "vendor" })
                     }
@@ -131,7 +135,11 @@ const VendorAndInviteList = () => {
           ))}
 
           {invites.map((invite) => (
-            <Item variant="outline" key={invite.id}>
+            <Item
+              variant="outline"
+              className="rounded shadow-none border"
+              key={invite.id}
+            >
               <ItemContent>
                 <ItemDescription>
                   {invite.invited?.email}
@@ -145,8 +153,8 @@ const VendorAndInviteList = () => {
                   mode={profile.role === "owner" ? "visible" : "hidden"}
                 >
                   <Button
-                    variant="outline"
-                    className="hover:text-red-300 hover:border-red-500 text-sm"
+                    variant="destructive"
+                    className="rounded text-sm"
                     onClick={() =>
                       setPendingDelete({ id: invite.id, type: "invite" })
                     }

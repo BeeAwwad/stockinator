@@ -77,7 +77,7 @@ export default function AddProduct() {
   if (profile?.role !== "owner") return null;
 
   return (
-    <Card className="w-full grid gap-4 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl">
+    <Card className="w-full grid rounded shadow-none border gap-4 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl">
       <form
         onSubmit={handleSubmit(handleFormSubmit, (err) => console.log(err))}
       >
@@ -98,12 +98,13 @@ export default function AddProduct() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Input placeholder="Name" {...register("name")} />
+          <Input className="rounded" placeholder="Name" {...register("name")} />
           {errors.name && (
             <p className="text-red-500 text-sm">{errors.name.message}</p>
           )}
           <Input
             placeholder="Price"
+            className="rounded"
             type="number"
             {...register("price", { valueAsNumber: true })}
           />
@@ -113,12 +114,13 @@ export default function AddProduct() {
           <Input
             placeholder="Stock"
             type="number"
+            className="rounded"
             {...register("stock", { valueAsNumber: true })}
           />
           {errors.stock && (
             <p className="text-red-500 text-sm">{errors.stock.message}</p>
           )}
-          <Button type="submit" className="w-full mt-3">
+          <Button type="submit" className="w-full rounded mt-3">
             Add Product
           </Button>
         </CardContent>

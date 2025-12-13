@@ -32,7 +32,8 @@ import { useOnlineStatus } from "@/hook/useOnlineStatus";
 type TransactionFormProps = z.infer<typeof transactionSchema>;
 
 export default function AddTransaction() {
-  const { products, profile, setTransactions, setTransactionsLoading } = useAuth();
+  const { products, profile, setTransactions, setTransactionsLoading } =
+    useAuth();
   const {
     control,
     register,
@@ -45,7 +46,7 @@ export default function AddTransaction() {
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       productId: "",
-      amount: 0,
+      amount: undefined,
       createdBy: profile?.business_id,
       createdAt: new Date(),
     },
@@ -188,7 +189,7 @@ export default function AddTransaction() {
   };
 
   return (
-    <Card>
+    <Card className="rounded shadow-none border">
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3">
         <CardHeader>
           <CardTitle className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 flex justify-between">
@@ -229,7 +230,7 @@ export default function AddTransaction() {
                   }}
                   value={getValues().productId}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full rounded">
                     <SelectValue placeholder="Select Product">
                       {selectedProduct && selectedProduct.name}
                     </SelectValue>
@@ -252,6 +253,7 @@ export default function AddTransaction() {
           <Input
             type="number"
             placeholder="amount"
+            className="rounded"
             {...register("amount", {
               valueAsNumber: true,
               required: true,
@@ -286,7 +288,7 @@ export default function AddTransaction() {
           )}
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full mt-2.5">
+          <Button type="submit" className="w-full rounded mt-2.5">
             Submit
           </Button>
         </CardFooter>

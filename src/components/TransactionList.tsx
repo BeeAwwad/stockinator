@@ -112,7 +112,10 @@ export default function TransactionList() {
           {sortedTransactions.map((tx, i) => {
             const product = products.find((p) => p.id === tx.product_id);
             return (
-              <Card key={`${tx.id} ~ ${i}`}>
+              <Card
+                className="rounded shadow-none border"
+                key={`${tx.id} ~ ${i}`}
+              >
                 <CardHeader className="flex justify-between items-center border-b">
                   <CardTitle className="">Transaction</CardTitle>
                   <p className="text-xs text-muted-foreground">
@@ -155,11 +158,18 @@ export default function TransactionList() {
                       {new Date(tx.created_at).toLocaleDateString()}
                     </span>
                   </p>
-                  {tx.verified === true ? (
-                    <p className="text-sm flex text-emerald-500">verified</p>
-                  ) : (
-                    <p>not verified</p>
-                  )}
+                  <p className="text-sm flex">
+                    <span className="text-muted-foreground w-20  mr-1">
+                      Verified:{" "}
+                    </span>
+                    <span className="text-gray-950">
+                      {tx.verified ? (
+                        <span className="text-green-500">Yes</span>
+                      ) : (
+                        <span className="text-red-600">No</span>
+                      )}
+                    </span>
+                  </p>
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   {profile?.role === "owner" && (
@@ -167,7 +177,7 @@ export default function TransactionList() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="text-red-600 mt-2.5"
+                        className="text-red-600 mt-2.5 rounded"
                         onClick={() => {
                           setPendingDeleteId(tx.id);
                           setDeleteDialogOpen(true);
@@ -180,6 +190,7 @@ export default function TransactionList() {
                       <Button
                         variant={"secondary"}
                         disabled={tx.verified}
+                        className="rounded"
                         onClick={() => {
                           setPendingVerifyId(tx.id);
                           setVerifyDialogOpen(true);

@@ -82,7 +82,7 @@ const InviteVendor = () => {
 
   return (
     <div className="flex items-center">
-      <Card className="w-full max-w-sm md:max-w-lg lg:max-w-xl">
+      <Card className="w-full max-w-sm md:max-w-lg lg:max-w-xl rounded shadow-none border">
         <CardHeader>
           <CardTitle>Invite Vendor</CardTitle>
           <CardDescription>Vendors invited: {vendors.length}/2</CardDescription>
@@ -91,13 +91,14 @@ const InviteVendor = () => {
           <Input
             type="email"
             value={email}
+            className="rounded"
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Vendor's email"
           />
         </CardContent>
         <CardFooter>
           <Button
-            className="w-full"
+            className="w-full rounded"
             onClick={handleInviteVendor}
             disabled={!email || vendors.length >= 2}
           >

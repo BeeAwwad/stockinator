@@ -105,7 +105,9 @@ export default function Notifications() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-3xl scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">Notifications</h2>
+      <h2 className="text-3xl scroll-m-20 border-b pb-2 font-semibold tracking-tight">
+        Notifications
+      </h2>
 
       <Activity mode={personalInvites.length === 0 ? "visible" : "hidden"}>
         <p className="text-muted-foreground">No notifications</p>
@@ -118,7 +120,7 @@ export default function Notifications() {
       </Activity>
 
       {personalInvites.map((invite) => (
-        <Item key={invite.id}>
+        <Item className="rounded shadow-none border" key={invite.id}>
           <ItemMedia>
             <Bell className="size-5" />
           </ItemMedia>
@@ -155,6 +157,7 @@ export default function Notifications() {
           <AlertDialogFooter className="mt-4 flex gap-2">
             <Button
               variant="default"
+              className="rounded"
               onClick={() => {
                 if (!selectedInvite) return;
                 handleAcceptInvite(selectedInvite);
@@ -164,6 +167,7 @@ export default function Notifications() {
             </Button>
             <Button
               variant="destructive"
+              className="rounded"
               onClick={() => {
                 if (!selectedInvite) return;
                 handleDeclineInvite(selectedInvite);

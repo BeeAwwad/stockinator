@@ -91,7 +91,7 @@ export default function ProductList() {
               <div key={product.id} className="">
                 {profile?.role === "owner" ? (
                   <>
-                    <Card>
+                    <Card className="rounded shadow-none border">
                       <CardHeader>
                         <p className="text-muted-foreground text-end text-xs">
                           SKU: {product.sku}
@@ -105,7 +105,7 @@ export default function ProductList() {
                                 Product Name
                               </Label>
                               <Input
-                                className="text-sm h-[2.13rem]  py-1.5"
+                                className="text-sm h-[2.13rem] rounded py-1.5"
                                 defaultValue={product.name}
                                 onChange={(e) =>
                                   setEditing((prev) => ({
@@ -123,7 +123,7 @@ export default function ProductList() {
                                 Price
                               </Label>
                               <Input
-                                className="text-sm h-[2.13rem] py-1.5"
+                                className="text-sm h-[2.13rem] py-1.5 rounded"
                                 defaultValue={product.price}
                                 type="number"
                                 onChange={(e) =>
@@ -142,7 +142,7 @@ export default function ProductList() {
                                 Stock
                               </Label>
                               <Input
-                                className="text-sm h-[2.13rem] py-1.5"
+                                className="text-sm h-[2.13rem] py-1.5 rounded"
                                 defaultValue={product.stock}
                                 type="number"
                                 onChange={(e) =>
@@ -163,7 +163,7 @@ export default function ProductList() {
                               <Label className="text-xs text-muted-foreground">
                                 Product Name
                               </Label>
-                              <p className="text-sm px-3 py-1.5 border rounded-sm">
+                              <p className="text-sm px-3 py-1.5 border rounded">
                                 {product.name}
                               </p>
                             </div>
@@ -171,7 +171,7 @@ export default function ProductList() {
                               <Label className="text-xs text-muted-foreground">
                                 Price
                               </Label>
-                              <p className="text-sm px-3 py-1.5 border rounded-sm">
+                              <p className="text-sm px-3 py-1.5 border rounded">
                                 {product.price}
                               </p>
                             </div>
@@ -179,7 +179,7 @@ export default function ProductList() {
                               <Label className="text-xs text-muted-foreground">
                                 Stock
                               </Label>
-                              <p className="text-sm px-3 py-1.5 border rounded-sm">
+                              <p className="text-sm px-3 py-1.5 border rounded">
                                 {product.stock}
                               </p>
                             </div>
@@ -190,6 +190,7 @@ export default function ProductList() {
                         {isEditing ? (
                           <Button
                             variant="outline"
+                            className="rounded"
                             onClick={() => {
                               setPendingSaveId(product.id);
                               setEditDialogOpen(true);
@@ -200,6 +201,7 @@ export default function ProductList() {
                         ) : (
                           <Button
                             variant="outline"
+                            className="rounded"
                             onClick={() => {
                               setIsEditing(true);
                             }}
@@ -209,6 +211,7 @@ export default function ProductList() {
                         )}
                         {isEditing ? (
                           <Button
+                            className="rounded"
                             variant="outline"
                             onClick={() => {
                               setIsEditing(false);
@@ -219,7 +222,7 @@ export default function ProductList() {
                         ) : (
                           <Button
                             variant="outline"
-                            className="text-rose-600"
+                            className="text-rose-600 rounded"
                             onClick={() => {
                               setPendingDeleteId(product.id);
                               setDeleteDialogOpen(true);
@@ -232,7 +235,7 @@ export default function ProductList() {
                     </Card>
                   </>
                 ) : (
-                  <Card>
+                  <Card className="rounded shadow-none border">
                     <CardHeader className="flex justify-between border-b">
                       <CardTitle className="scroll-m-20 tracking-tight">
                         {product.name}

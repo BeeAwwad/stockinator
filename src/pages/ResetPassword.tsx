@@ -23,27 +23,27 @@ type ResetPasswordFormProps = z.infer<typeof passwordResetSchema>;
 
 const ResetPasswordForm = () => {
   const navigate = useNavigate();
-  const { 
-        register,
-	handleSubmit,
-	formState: { errors },	
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
   } = useForm<ResetPasswordFormProps>({
- 	resolver: zodResolver(passwordResetSchema),
-	defaultValues: {
-		newPassword: "",
-		confirmPassword: "",		
-	},
-  })
- 
+    resolver: zodResolver(passwordResetSchema),
+    defaultValues: {
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
-   const onSubmit = async (data: ResetPasswordFormProps) => {
-    try {
-     setIsLoading(true);
-     const { newPassword } = data;
 
-     const { error } = await supabase.auth.updateUser({
+  const onSubmit = async (data: ResetPasswordFormProps) => {
+    try {
+      setIsLoading(true);
+      const { newPassword } = data;
+
+      const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
@@ -53,9 +53,7 @@ const ResetPasswordForm = () => {
         return;
       }
 
-      toast.success(
-        "Password updated successfully! You are now logged in."
-      );
+      toast.success("Password updated successfully! You are now logged in.");
       navigate("/");
     } catch (err) {
       console.error("Unexpected Update Error:", err);
@@ -67,68 +65,76 @@ const ResetPasswordForm = () => {
 
   return (
     <div className="flex justify-center items-center flex-col mt-8">
-      <Card className="w-full max-w-md">
-      <CardHeader>   
-      	<CardTitle>Set New Password</CardTitle>
-	<CardDescription>Enter your new password</CardDescription>
-      </CardHeader> 
-       	<form onSubmit={handleSubmit(onSubmit)}>
-         <CardContent className="space-y-4 mb-8"> 
-          <div className="space-y-2">
-            <Label htmlFor="new-password-field">
-              New Password
-            </Label>
-            <div className="mt-1 relative">
-              <Input
-                id="new-password-field"
-                type={showPassword ? "text" : "password"}
-             	{...register("newPassword")} 
-		/>
-              <Button
-		size="icon"
-              	type="button" 
-	       	onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 rounded-l-none  flex items-center hover:text-gray-100"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </Button>
+      <Card className="w-full max-w-md shadow-none border rounded">
+        <CardHeader>
+          <CardTitle>Set New Password</CardTitle>
+          <CardDescription>Enter your new password</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4 mb-8">
+            <div className="space-y-2">
+              <Label htmlFor="new-password-field">New Password</Label>
+              <div className="mt-1 relative">
+                <Input
+                  className="rounded"
+                  id="new-password-field"
+                  type={showPassword ? "text" : "password"}
+                  {...register("newPassword")}
+                />
+                <Button
+                  size="icon"
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute rounded inset-y-0 right-0 rounded-l-none flex items-center hover:text-gray-100"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+              {errors.newPassword && (
+                <p className="mt-2 text-xs text-red-600">
+                  {errors.newPassword?.message}
+                </p>
+              )}
             </div>
-	   {errors.newPassword && (
-		<p className="mt-2 text-xs text-red-600">{errors.newPassword?.message}</p>  
-	   )}
-           </div>
-          <div>
-            <Label htmlFor="confirm-password-field">
-              Confirm New Password
-            </Label>
-            <div className="mt-1 relative">
-              <Input
-                id="confirm-password-field"
-                type={showPassword ? "text" : "password"}
-		{...register("confirmPassword")}
-              />
+            <div>
+              <Label htmlFor="confirm-password-field">
+                Confirm New Password
+              </Label>
+              <div className="mt-1 relative">
+                <Input
+                  className="rounded"
+                  id="confirm-password-field"
+                  type={showPassword ? "text" : "password"}
+                  {...register("confirmPassword")}
+                />
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-2 text-xs text-red-600">
+                  {errors.confirmPassword?.message}
+                </p>
+              )}
             </div>
-            {errors.confirmPassword && (
-              <p className="mt-2 text-xs text-red-600">{errors.confirmPassword?.message}</p>
-            )}
-          </div>
-	</CardContent>
-	<CardFooter>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <span className="flex items-center">
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating...
-              </span>
-            ) : (
-              "Update Password"
-            )}
-          </Button>
-	</CardFooter>
+          </CardContent>
+          <CardFooter>
+            <Button
+              type="submit"
+              className="w-full rounded"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating...
+                </span>
+              ) : (
+                "Update Password"
+              )}
+            </Button>
+          </CardFooter>
         </form>
       </Card>
     </div>

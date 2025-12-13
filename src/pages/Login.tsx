@@ -106,7 +106,7 @@ const Login = () => {
 
   return (
     <div className="flex items-center justify-center flex-col mt-8">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md shadow-none border rounded">
         <CardHeader>
           <CardTitle>{mode === "signup" ? "Sign Up" : "Sign In"}</CardTitle>
           <CardDescription>
@@ -129,7 +129,12 @@ const Login = () => {
           <CardContent className="space-y-4 mb-8">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} />
+              <Input
+                className="rounded"
+                id="email"
+                type="email"
+                {...register("email")}
+              />
               {errors.email && (
                 <p className="text-red-500 text-xs">{errors.email.message}</p>
               )}
@@ -138,6 +143,7 @@ const Login = () => {
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
+                  className="rounded"
                   id="password"
                   type={showPassword ? "text" : "password"}
                   {...register("password")}
@@ -146,7 +152,7 @@ const Login = () => {
                   size="icon"
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 rounded-l-none  flex items-center hover:text-gray-100"
+                  className="absolute inset-y-0 right-0 rounded rounded-l-none  flex items-center hover:text-gray-100"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -166,6 +172,7 @@ const Login = () => {
               <div className="space-y-2">
                 <Label>Confirm Password</Label>
                 <Input
+                  className="rounded"
                   type={showPassword ? "text" : "password"}
                   {...register("confirmPassword")}
                 />
@@ -179,6 +186,7 @@ const Login = () => {
           </CardContent>
           <CardAction className="mx-4">
             <Button
+              className="rounded"
               variant="link"
               type="button"
               onClick={() => navigate("/forgot-password")}
@@ -187,7 +195,7 @@ const Login = () => {
             </Button>
           </CardAction>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading} className="w-full rounded">
               {loading
                 ? mode === "signup"
                   ? "Creating..."

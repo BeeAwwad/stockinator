@@ -30,7 +30,7 @@ export default function ForgotPassword() {
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { email: "" },
@@ -48,7 +48,9 @@ export default function ForgotPassword() {
         console.error(error);
       }
 
-      toast.success("If you are a registered user, you will receive a reset email.");
+      toast.success(
+        "If you are a registered user, you will receive a reset email."
+      );
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong.");
@@ -59,7 +61,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="flex justify-center items-center flex-col mt-8">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md shadow-none border rounded">
         <CardHeader>
           <CardTitle>Forgot Password</CardTitle>
           <CardDescription>
@@ -71,20 +73,32 @@ export default function ForgotPassword() {
           <CardContent className="space-y-4 mb-8">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} />
+              <Input
+                className="rounded"
+                id="email"
+                type="email"
+                {...register("email")}
+              />
               {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
           </CardContent>
-	  <CardAction className="mx-4">
-	   	<Button variant="link" type="button" onClick={() => navigate("/login")}>
-			Signin or Signup
-		</Button> 
-	    </CardAction>
+          <CardAction className="mx-4">
+            <Button
+              className="rounded"
+              variant="link"
+              type="button"
+              onClick={() => navigate("/login")}
+            >
+              Signin or Signup
+            </Button>
+          </CardAction>
 
           <CardFooter>
-	    <Button disabled={loading} className="w-full">
+            <Button className="rounded w-full" disabled={loading}>
               {loading ? "Sending..." : "Send Reset Link"}
             </Button>
           </CardFooter>

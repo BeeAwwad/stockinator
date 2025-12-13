@@ -5,12 +5,21 @@ import { Button } from "./ui/button";
 import { useAuth } from "@/hook/useAuth";
 import { Spinner } from "./ui/spinner";
 
-const NavLink = ({ text, link }: { text: string; link: string }) => {
+const NavLink = ({
+  text,
+  link,
+  onClick,
+}: {
+  text: string;
+  link: string;
+  onClick?: () => void;
+}) => {
   return (
-    <li className="py-2 grid place-items-center lg:mx-5">
+    <li className="py-2 grid place-items-center lg:mx-3">
       <Link
         to={link}
-        className="p-2 lg:w-28 text-center text-base md:text-sm rounded font-bold hover:bg-slate-800 hover:text-white"
+        onClick={onClick}
+        className="p-2 text-center text-base md:text-sm font-medium hover:underline"
       >
         {text}
       </Link>
@@ -25,6 +34,12 @@ const Navbar = () => {
 
   const toggleNavbar = () => {
     setIsOpen(!isOpen);
+  };
+
+  const closeNavbar = () => {
+    if (window.innerWidth > 768) {
+      setIsOpen(false);
+    }
   };
 
   const handleScroll = () => {
@@ -78,6 +93,7 @@ const Navbar = () => {
           <Link
             to={profile ? "/" : "/login"}
             className="text-lg font-semibold text-black flex items-center gap-x-2"
+            onClick={closeNavbar}
           >
             Stokinator
           </Link>
@@ -91,20 +107,36 @@ const Navbar = () => {
 
         <div className="flex-1 flex flex-col md:flex-row items-center justify-between md:justify-center gap-6 p-6 md:p-0">
           {/* Navbar items */}
-          <ul className="flex flex-col md:flex-row items-center text-base gap-4 text-neutral-700 font-normal">
+          <ul className="flex flex-col md:flex-row items-center text-base gap-4 md:gap-1 text-neutral-700 font-normal">
             <Activity mode={profile?.business_id ? "visible" : "hidden"}>
               <>
-                <NavLink text="Products" link="/products" />
-                <NavLink text="Transactions" link="/transactions" />
+                <NavLink
+                  text="Products"
+                  link="/products"
+                  onClick={closeNavbar}
+                />
+                <NavLink
+                  text="Transactions"
+                  link="/transactions"
+                  onClick={closeNavbar}
+                />
               </>
             </Activity>
             <Activity
               mode={!profile || profile.business_id ? "hidden" : "visible"}
             >
-              <NavLink link="/register-business" text="Create Business" />
+              <NavLink
+                link="/register-business"
+                text="Create Business"
+                onClick={closeNavbar}
+              />
             </Activity>
             <Activity mode={profile ? "visible" : "hidden"}>
-              <NavLink link="/notifications" text="Notifications" />
+              <NavLink
+                link="/notifications"
+                text="Notifications"
+                onClick={closeNavbar}
+              />
             </Activity>
           </ul>
 
@@ -112,8 +144,11 @@ const Navbar = () => {
             <Button
               variant={"destructive"}
               size={"lg"}
-              onClick={signOutUser}
-              className="md:hidden"
+              onClick={() => {
+                signOutUser();
+                closeNavbar();
+              }}
+              className="md:hidden flex rounded"
             >
               <Activity mode={signOutLoading ? "visible" : "hidden"}>
                 <Spinner />
@@ -128,7 +163,7 @@ const Navbar = () => {
         <Button
           variant={"destructive"}
           onClick={signOutUser}
-          className="hidden md:block"
+          className="hidden md:flex rounded"
         >
           <Activity mode={signOutLoading ? "visible" : "hidden"}>
             <Spinner />
