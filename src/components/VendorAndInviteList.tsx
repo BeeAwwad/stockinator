@@ -14,7 +14,6 @@ import {
   Item,
   ItemContent,
   ItemDescription,
-  ItemMedia,
   ItemActions,
 } from "@/components/ui/item";
 import { Button } from "./ui/button";
@@ -108,48 +107,54 @@ const VendorAndInviteList = () => {
           {vendors.map((v, i) => (
             <Item variant="outline" className="transition-colors" key={v.id}>
               <ItemContent>
-	      	<ItemDescription>
-                {v.email || `Vendor ${i + 1}`}
-                <span className="text-xs text-green-600 ml-2">(Vendor)</span>
-		</ItemDescription>
+                <ItemDescription>
+                  {v.email || `Vendor ${i + 1}`}
+                  <span className="text-xs text-green-600 ml-2">(Vendor)</span>
+                </ItemDescription>
               </ItemContent>
-	      <ItemActions>
-              <Activity mode={profile.role === "owner" ? "visible" : "hidden"}>
-                <Button
-                  variant="outline"
-                  className="hover:border-red-300 hover:text-red-500 text-sm"
-                  onClick={() => setPendingDelete({ id: v.id, type: "vendor" })}
+              <ItemActions>
+                <Activity
+                  mode={profile.role === "owner" ? "visible" : "hidden"}
                 >
-                  Remove
-                </Button>
-              </Activity>
-	      </ItemActions>
+                  <Button
+                    variant="destructive"
+                    className="text-sm"
+                    onClick={() =>
+                      setPendingDelete({ id: v.id, type: "vendor" })
+                    }
+                  >
+                    Remove
+                  </Button>
+                </Activity>
+              </ItemActions>
             </Item>
           ))}
 
           {invites.map((invite) => (
-            <Item variant="outline" 
-              key={invite.id}
-            >
+            <Item variant="outline" key={invite.id}>
               <ItemContent>
-	       <ItemDescription>
-                {invite.invited?.email}
-                <span className="text-xs text-yellow-600 ml-2">(Invited)</span>
-	       </ItemDescription>
+                <ItemDescription>
+                  {invite.invited?.email}
+                  <span className="text-xs text-yellow-600 ml-2">
+                    (Invited)
+                  </span>
+                </ItemDescription>
               </ItemContent>
-	      <ItemActions>
-              <Activity mode={profile.role === "owner" ? "visible" : "hidden"}>
-                <Button
-                  variant="outline"
-                  className="hover:text-red-300 hover:border-red-500 text-sm"
-                  onClick={() =>
-                    setPendingDelete({ id: invite.id, type: "invite" })
-                  }
+              <ItemActions>
+                <Activity
+                  mode={profile.role === "owner" ? "visible" : "hidden"}
                 >
-                  Cancel
-                </Button>
-	      </Activity>
-	     </ItemActions>
+                  <Button
+                    variant="outline"
+                    className="hover:text-red-300 hover:border-red-500 text-sm"
+                    onClick={() =>
+                      setPendingDelete({ id: invite.id, type: "invite" })
+                    }
+                  >
+                    Cancel
+                  </Button>
+                </Activity>
+              </ItemActions>
             </Item>
           ))}
         </div>

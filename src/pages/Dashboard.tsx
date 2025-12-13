@@ -67,7 +67,7 @@ const Dashboard = () => {
   return (
     <>
       <div className="py-6 space-y-6">
-        <h1 className="text-3xl scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">
+        <h1 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">
           Dashboard
         </h1>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -131,8 +131,8 @@ const Dashboard = () => {
                   </ItemContent>
                   <ItemActions>
                     <Button
-                      variant="outline"
-		      className="hover:border-red-300 hover:text-red-500 text-sm"
+                      variant="destructive"
+                      className="text-sm"
                       onClick={() => {
                         setBusinessId(profile?.business_id ?? null);
                         setDeleteDialogOpen(true);
