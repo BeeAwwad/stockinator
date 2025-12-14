@@ -55,7 +55,7 @@ export default function ProductList() {
 
     setEditing((prev) => ({ ...prev, [id]: {} }));
     toast.success("Changes Saved!");
-    setIsEditingId(id);
+    setIsEditingId(null);
   };
 
   const handleDelete = async (id: string) => {
