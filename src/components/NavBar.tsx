@@ -1,5 +1,5 @@
 import { useState, useEffect, Activity } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AlignJustify, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hook/useAuth";
@@ -30,7 +30,9 @@ const NavLink = ({
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { profile, signOutLoading, signOutUser } = useAuth();
-  const [isScrolled, setIsScrolled] = useState(false);
+  const location = useLocation();
+
+  console.log({ location });
 
   const toggleNavbar = () => {
     setIsOpen(!isOpen);
@@ -42,28 +44,14 @@ const Navbar = () => {
     }
   };
 
-  const handleScroll = () => {
-    if (window.scrollY > 50) {
-      setIsScrolled(true);
-    } else {
-      setIsScrolled(false);
-    }
-  };
-
-  // Adding event listener on mount and removing on unmount
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+    setIsOpen(false);
+  }, [location.pathname]);
 
   return (
     <div
       id="navbar"
-      className={`h-16 w-full bg-white border-b border-neutral-200 flex items-center justify-between md:px-16 sm:px-10 px-4 fixed top-0 transition-all ease-in-out duration-300 z-50 ${
-        isScrolled ? "" : ""
-      }`}
+      className="h-16 w-full bg-white border-b border-neutral-200 flex items-center justify-between md:px-16 sm:px-10 px-4 fixed top-0 transition-all ease-in-out duration-300 z-50"
     >
       {/* Logo */}
       <div className="flex items-center gap-2">
@@ -76,12 +64,21 @@ const Navbar = () => {
       </div>
 
       {/* Hamburger Menu for Mobile */}
-      <div className="md:hidden">
-        <Button onClick={toggleNavbar} size={"icon"}>
-          <AlignJustify size={24} />
-        </Button>
-      </div>
-
+      <Activity
+        mode={
+          location.pathname === "/login" ||
+          location.pathname === "/forgot-password" ||
+          location.pathname === "/reset-password"
+            ? "hidden"
+            : "visible"
+        }
+      >
+        <div className="md:hidden">
+          <Button onClick={toggleNavbar} size={"icon"}>
+            <AlignJustify size={24} />
+          </Button>
+        </div>
+      </Activity>
       {/* Navbar items and buttons */}
       <div
         className={`fixed md:static top-0 right-0 h-screen md:h-auto w-full md:w-auto bg-gray-50 border-l md:border-none border-gray-300 md:bg-transparent shadow-lg md:shadow-none transition-transform duration-300 ease-in-out transform flex-1 ${

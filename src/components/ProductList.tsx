@@ -35,9 +35,9 @@ export default function ProductList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingId, setIsEditingId] = useState<string | null>(null);
   const { products, setProducts, profile, productsLoading } = useAuth();
-  console.log({ productsLoading });
+
   const handleEdit = async (id: string) => {
     const changes = editing[id];
     if (!changes) return;
@@ -55,7 +55,7 @@ export default function ProductList() {
 
     setEditing((prev) => ({ ...prev, [id]: {} }));
     toast.success("Changes Saved!");
-    setIsEditing(false);
+    setIsEditingId(id);
   };
 
   const handleDelete = async (id: string) => {
@@ -98,7 +98,7 @@ export default function ProductList() {
                         </p>
                       </CardHeader>
                       <CardContent className="space-y-3.5">
-                        {isEditing ? (
+                        {isEditingId === product.id ? (
                           <>
                             <div className="space-y-1">
                               <Label className="text-xs text-muted-foreground">
@@ -187,7 +187,7 @@ export default function ProductList() {
                         )}
                       </CardContent>
                       <CardFooter className="justify-between">
-                        {isEditing ? (
+                        {isEditingId === product.id ? (
                           <Button
                             variant="outline"
                             className="rounded"
@@ -203,18 +203,18 @@ export default function ProductList() {
                             variant="outline"
                             className="rounded"
                             onClick={() => {
-                              setIsEditing(true);
+                              setIsEditingId(product.id);
                             }}
                           >
                             Edit
                           </Button>
                         )}
-                        {isEditing ? (
+                        {isEditingId === product.id ? (
                           <Button
                             className="rounded"
                             variant="outline"
                             onClick={() => {
-                              setIsEditing(false);
+                              setIsEditingId(null);
                             }}
                           >
                             Cancel
