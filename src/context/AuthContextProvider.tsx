@@ -253,7 +253,13 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       toast.error("Failed to load products.");
       return;
     }
-    setProducts(data || []);
+    setProducts(
+      data.sort((a, b) => {
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      })
+    );
     setProductsLoading(false);
   };
 
@@ -276,15 +282,38 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setProducts((prev) => [...prev, payload.new as ProductProps]);
+            setProducts((prev) =>
+              [...prev, payload.new as ProductProps].sort((a, b) => {
+                return (
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime()
+                );
+              })
+            );
           } else if (payload.eventType === "UPDATE") {
             setProducts((prev) =>
-              prev.map((p) =>
-                p.id === payload.new.id ? (payload.new as ProductProps) : p
-              )
+              prev
+                .map((p) =>
+                  p.id === payload.new.id ? (payload.new as ProductProps) : p
+                )
+                .sort((a, b) => {
+                  return (
+                    new Date(b.created_at).getTime() -
+                    new Date(a.created_at).getTime()
+                  );
+                })
             );
           } else if (payload.eventType === "DELETE") {
-            setProducts((prev) => prev.filter((p) => p.id !== payload.old.id));
+            setProducts((prev) =>
+              prev
+                .filter((p) => p.id !== payload.old.id)
+                .sort((a, b) => {
+                  return (
+                    new Date(b.created_at).getTime() -
+                    new Date(a.created_at).getTime()
+                  );
+                })
+            );
           }
         }
       )

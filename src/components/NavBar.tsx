@@ -32,8 +32,6 @@ const Navbar = () => {
   const { profile, signOutLoading, signOutUser } = useAuth();
   const location = useLocation();
 
-  console.log({ location });
-
   const toggleNavbar = () => {
     setIsOpen(!isOpen);
   };

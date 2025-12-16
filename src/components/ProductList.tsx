@@ -61,7 +61,15 @@ export default function ProductList() {
   const handleDelete = async (id: string) => {
     if (profile?.role !== "owner") return;
     const deletedProduct = products.find((p) => p.id === id);
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+    setProducts((prev) =>
+      prev
+        .filter((p) => p.id !== id)
+        .sort((a, b) => {
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        })
+    );
 
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {

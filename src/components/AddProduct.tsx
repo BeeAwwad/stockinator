@@ -45,7 +45,6 @@ export default function AddProduct() {
       .slice(-5)}`;
 
   const handleFormSubmit = async (data: ProductFormProps) => {
-    console.log("handleSubmit...");
     if (!profile?.business_id || profile?.role !== "owner") {
       return;
     }
