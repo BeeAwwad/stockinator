@@ -238,7 +238,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, loadInvites]);
+  }, [profile?.id, profile?.business_id]);
 
   // Products
   const loadProducts = async () => {
@@ -247,7 +247,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const { data, error } = await supabase
       .from("products")
       .select("*")
-      .eq("business_id", profile?.business_id);
+      .eq("business_id", profile?.business_id)
+      .order("created_at", { ascending: false });
     if (error) {
       console.error(error);
       toast.error("Failed to load products.");

@@ -19,12 +19,38 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { productSchema } from "@/lib/schemas";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 
 type ProductFormProps = z.infer<typeof productSchema>;
+
+const uploadProductImage = async (
+  file: File,
+  businessId: string
+): Promise<string | null> => {
+  const fileExt = file.name.split(".").pop();
+  const filePath = `${businessId}/${crypto.randomUUID()}.${fileExt}`;
+
+  const { error } = await supabase.storage
+    .from("product_images")
+    .upload(filePath, file);
+
+  if (error) {
+    console.error("Image upload failed:", error);
+    toast.error("Image upload failed");
+    return null;
+  }
+
+  const { data } = supabase.storage
+    .from("product_images")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+};
 
 export default function AddProduct() {
   const { profile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const {
     register,
     handleSubmit,
@@ -53,6 +79,19 @@ export default function AddProduct() {
     setIsSubmitting(true);
     const sku = generateSKU(data.name);
     console.log({ sku });
+
+    let imageUrl: string | null = null;
+
+    if (imageFile) {
+      imageUrl = await uploadProductImage(imageFile, profile.business_id);
+      if (!imageUrl) {
+        toast.error("image upload failed");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+    console.log({ imageUrl });
+
     const { error } = await supabase.from("products").insert([
       {
         business_id: profile.business_id,
@@ -60,6 +99,7 @@ export default function AddProduct() {
         sku,
         price: Number(data.price),
         stock: Number(data.stock),
+        image_url: imageUrl,
       },
     ]);
     toast.success("insert completed");
@@ -92,8 +132,15 @@ export default function AddProduct() {
               ""
             )}
           </CardTitle>
-          <CardDescription className="mb-3">
-            Add products to your businesses
+          <CardDescription className="mb-3 flex justify-between items-center">
+            <p>Add products to your business</p>{" "}
+            {imageFile && (
+              <LazyLoadImage
+                src={URL.createObjectURL(imageFile)}
+                alt="image preview"
+                className="ml-4 rounded object-cover size-16 border"
+              />
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -115,6 +162,22 @@ export default function AddProduct() {
             type="number"
             className="rounded"
             {...register("stock", { valueAsNumber: true })}
+          />
+          <Input
+            type="file"
+            className="rounded"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+
+              if (file.size > 2 * 1024 * 1024) {
+                toast.error("Image must be under 2MB");
+                return;
+              }
+
+              setImageFile(file);
+            }}
           />
           {errors.stock && (
             <p className="text-red-500 text-sm">{errors.stock.message}</p>

@@ -13,6 +13,7 @@ export type ProductProps = {
   price: number;
   stock: number;
   business_id: string;
+  image_url: string | null;
   created_at: Date;
 };
 
@@ -23,10 +24,10 @@ export type TransactionProps = {
   created_by: string;
   created_at: Date;
   verified: boolean;
-  is_offline?: boolean; 
+  is_offline?: boolean;
   created_by_email?: {
- 	email: string; 
-  }
+    email: string;
+  };
 };
 
 export type InviteProps = {
