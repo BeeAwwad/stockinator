@@ -1,13 +1,16 @@
 import { z } from "zod";
 
+export const transactionItemSchema = z.object({
+  productId: z.string().uuid(),
+  quantity: z.number().min(1, "Quantity must be at least 1"),
+  unitPrice: z.number().min(0),
+  name: z.string(),
+});
+
 export const transactionSchema = z.object({
-  productId: z.string().min(1, "Product is required"),
-  amount: z
-    .number({ invalid_type_error: "Amount must be a number" })
-    .min(1, "Amount must be at least 1"),
-  total: z.number(),
-  createdBy: z.string(),
-  createdAt: z.date(),
+  items: z
+    .array(transactionItemSchema)
+    .min(1, "At least one product is required"),
 });
 
 export const productSchema = z.object({
@@ -24,11 +27,9 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export const passwordResetSchema = z
   .object({
-    newPassword: z
-      .string()
-      .min(MIN_PASSWORD_LENGTH, {
-        message: `Password must be at least ${MIN_PASSWORD_LENGTH} charcters long.`,
-      }),
+    newPassword: z.string().min(MIN_PASSWORD_LENGTH, {
+      message: `Password must be at least ${MIN_PASSWORD_LENGTH} charcters long.`,
+    }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {

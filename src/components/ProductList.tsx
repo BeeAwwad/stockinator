@@ -164,9 +164,11 @@ export default function ProductList() {
       );
 
       toast.success("Image removed", { id: toastId });
+      setIsEditingId(null);
     } catch (err) {
       console.error(err);
       toast.error("Failed to remove image", { id: toastId });
+      setIsEditingId(null);
     }
   };
 
@@ -213,7 +215,7 @@ export default function ProductList() {
         <Spinner className="mx-auto my-5" />
       </Activity>
       <Activity mode={productsLoading ? "hidden" : "visible"}>
-        <div className="grid gap-4 my-6 w-full max-w-lg md:max-w-xl lg:max-w-2xl">
+        <div className="grid md:grid-cols-2 gap-4 my-6 w-full max-w-lg md:max-w-xl lg:max-w-2xl">
           {products.length === 0 ? (
             <p className="text-center text-muted-foreground text-sm">
               No products availabe yet :(
@@ -240,14 +242,14 @@ export default function ProductList() {
                             }`}
                           />
 
-                          {isEditingId && product.image_url && (
+                          {isEditingId === product.id && product.image_url && (
                             <Button
                               size={"icon"}
                               onClick={() => {
                                 setPendingDeleteImageId(product.id);
                                 setDeleteImageDialogOpen(true);
                               }}
-                              className="absolute z-50 top-2 right-2 p-1 bg-rose-600 rounded hover:bg-rose-700 transition-colors"
+                              className="absolute z-10 top-2 right-2 p-1 bg-rose-600 rounded hover:bg-rose-700 transition-colors"
                             >
                               <X />
                             </Button>
@@ -265,7 +267,7 @@ export default function ProductList() {
                                 <span className="text-xs font-medium">
                                   Change Photo
                                 </span>
-                                <input
+                                <Input
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
@@ -344,7 +346,7 @@ export default function ProductList() {
                                 <Label className="text-xs text-muted-foreground">
                                   Product Name
                                 </Label>
-                                <p className="text-sm px-3 py-1.5 border rounded">
+                                <p className="text-sm py-1.5 border-b">
                                   {product.name}
                                 </p>
                               </div>
@@ -352,7 +354,7 @@ export default function ProductList() {
                                 <Label className="text-xs text-muted-foreground">
                                   Price
                                 </Label>
-                                <p className="text-sm px-3 py-1.5 border rounded">
+                                <p className="text-sm py-1.5 border-b">
                                   {product.price}
                                 </p>
                               </div>
@@ -360,7 +362,7 @@ export default function ProductList() {
                                 <Label className="text-xs text-muted-foreground">
                                   Stock
                                 </Label>
-                                <p className="text-sm px-3 py-1.5 border rounded">
+                                <p className="text-sm py-1.5 border-b">
                                   {product.stock}
                                 </p>
                               </div>

@@ -10,9 +10,8 @@ import type {
   TransactionProps,
 } from "@/lib/types";
 import { AuthContext } from "./AuthContext";
-import { useOnlineStatus } from "@/hook/useOnlineStatus";
-import { offlineDB } from "@/lib/offlineDB";
 import { useNavigate } from "react-router-dom";
+import { useOnlineStatus } from "@/hook/useOnlineStatus";
 
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -29,9 +28,9 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<TransactionProps[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [signOutLoading, setSignOutLoading] = useState(false);
-  const isOnline = useOnlineStatus();
   const navigate = useNavigate();
-
+  const isOnline = useOnlineStatus();
+  console.log({ transactions });
   const loadProfile = async (userId: string) => {
     try {
       if (!userId) {
@@ -111,33 +110,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
     return () => listener.subscription.unsubscribe();
   }, []);
-
-  async function syncOfflineTransactions() {
-    const pending = await offlineDB.getAll("pending_transactions");
-
-    setTransactionsLoading(true);
-    for (const tx of pending) {
-      const { is_offline, id, ...cleanTx } = tx;
-      console.log("removing offline flags:", is_offline, id);
-      const { data, error } = await supabase
-        .from("transactions")
-        .insert(cleanTx)
-        .select()
-        .single();
-
-      if (!error) {
-        await offlineDB.delete("pending_transactions", tx.id);
-
-        setTransactions((prev) => prev.map((t) => (t.id === tx.id ? data : t)));
-        setTransactionsLoading(false);
-        toast.success("transactions synced");
-      }
-    }
-  }
-
-  useEffect(() => {
-    if (isOnline) syncOfflineTransactions();
-  }, [isOnline]);
 
   const loadBusinessName = async () => {
     if (!profile) return;
@@ -389,7 +361,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const { data, error } = await supabase
       .from("transactions")
       .select(
-        "*, created_by_email:profiles!transactions_created_by_fkey(email)"
+        "*, created_by_email:profiles!transactions_created_by_fkey(email), items:transaction_items(id, transaction_id, product_id, quantity, unit_price, products(name))"
       )
       .eq("business_id", profile?.business_id)
       .order("created_at", { ascending: false });

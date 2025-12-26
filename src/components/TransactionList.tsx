@@ -29,13 +29,8 @@ export default function TransactionList() {
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
   const [pendingVerifyId, setPendingVerifyId] = useState<string | null>(null);
 
-  const {
-    transactions,
-    setTransactions,
-    transactionsLoading,
-    profile,
-    products,
-  } = useAuth();
+  const { transactions, setTransactions, transactionsLoading, profile } =
+    useAuth();
 
   const handleVerify = async (transactionId: string) => {
     if (profile?.role !== "owner") return;
@@ -94,9 +89,6 @@ export default function TransactionList() {
     toast.success("Transaction deleted");
   };
 
-  const sortedTransactions = [...transactions].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
   return (
     <>
       <Activity mode={transactionsLoading ? "visible" : "hidden"}>
@@ -104,13 +96,12 @@ export default function TransactionList() {
       </Activity>
       <Activity mode={transactionsLoading ? "hidden" : "visible"}>
         <div className="my-6 space-y-4">
-          {sortedTransactions.length === 0 && (
+          {transactions.length === 0 && (
             <p className="text-center text-muted-foreground text-sm">
               No transactions availabe yet : |
             </p>
           )}
-          {sortedTransactions.map((tx, i) => {
-            const product = products.find((p) => p.id === tx.product_id);
+          {transactions.map((tx, i) => {
             return (
               <Card
                 className="rounded shadow-none border"
@@ -118,59 +109,64 @@ export default function TransactionList() {
               >
                 <CardHeader className="flex justify-between items-center border-b">
                   <CardTitle className="">Transaction</CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    {tx?.is_offline ? "offline" : ""}
-                  </p>
                 </CardHeader>
-                <CardContent className="space-y-2.5">
-                  <p className="text-sm lg:text-base flex">
-                    <span className="text-muted-foreground w-20 mr-1">
-                      Quantity:{" "}
-                    </span>
-                    {tx.amount} unit{tx.amount > 1 ? "s" : ""} of
-                    <span className="ml-1">
-                      {product?.name ?? " Unknown Product"}
-                    </span>
-                  </p>
-                  <p className="text-sm lg:text-base flex">
-                    <span className="text-muted-foreground w-20 mr-1">
-                      Total:{" "}
-                    </span>
+                <CardContent className="space-y-3">
+                  {/* Items */}
+                  <div className="space-y-2">
+                    {tx.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex justify-between text-sm border-b pb-1"
+                      >
+                        <span>
+                          {item.quantity} ×{" "}
+                          {item.products?.name ?? "Unknown Product"}
+                        </span>
+                        <span>
+                          ₦{(item.quantity * item.unit_price).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-between font-semibold pt-2">
+                    <span>Total</span>
                     <span>
-                      {product
-                        ? `₦${(tx.amount * product.price).toFixed(2)}`
-                        : "Unknown"}
+                      ₦
+                      {tx.items
+                        .reduce((sum, i) => sum + i.quantity * i.unit_price, 0)
+                        .toFixed(2)}
                     </span>
-                  </p>
-                  <p className="text-sm lg:text-base flex">
-                    <span className="text-muted-foreground w-20 mr-1">
-                      Added by:{" "}
-                    </span>
-                    <span className="text-gray-950">
-                      {tx.created_by_email?.email || "Unknown"}
-                    </span>
-                  </p>
+                  </div>
+
+                  {/* Meta */}
                   <p className="text-sm flex">
-                    <span className="text-muted-foreground w-20  mr-1">
-                      Created at:{" "}
+                    <span className="text-muted-foreground w-24">
+                      Added by:
                     </span>
-                    <span className="text-gray-950">
-                      {new Date(tx.created_at).toLocaleDateString()}
-                    </span>
+                    {tx.created_by_email?.email ?? "Unknown"}
                   </p>
+
                   <p className="text-sm flex">
-                    <span className="text-muted-foreground w-20  mr-1">
-                      Verified:{" "}
+                    <span className="text-muted-foreground w-24">
+                      Created at:
                     </span>
-                    <span className="text-gray-950">
-                      {tx.verified ? (
-                        <span className="text-green-500">Yes</span>
-                      ) : (
-                        <span className="text-red-600">No</span>
-                      )}
+                    {new Date(tx.created_at).toLocaleDateString()}
+                  </p>
+
+                  <p className="text-sm flex">
+                    <span className="text-muted-foreground w-24">
+                      Verified:
                     </span>
+                    {tx.verified ? (
+                      <span className="text-green-500">Yes</span>
+                    ) : (
+                      <span className="text-red-600">No</span>
+                    )}
                   </p>
                 </CardContent>
+
                 <CardFooter className="flex justify-between">
                   {profile?.role === "owner" && (
                     <>
