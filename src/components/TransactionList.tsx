@@ -32,6 +32,8 @@ export default function TransactionList() {
   const { transactions, setTransactions, transactionsLoading, profile } =
     useAuth();
 
+  console.log({ transactions });
+
   const handleVerify = async (transactionId: string) => {
     if (profile?.role !== "owner") return;
     setTransactions((prev) =>

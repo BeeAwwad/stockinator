@@ -6,13 +6,6 @@ import { transactionSchema } from "@/lib/schemas";
 import { z } from "zod";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,25 +17,24 @@ import {
 } from "@/components/ui/card";
 import type { ProductProps } from "@/lib/types";
 import { useAuth } from "@/hook/useAuth";
+import ProductCard from "./ProductCard";
 
-// 1. Let Zod define the type so they never mismatch
 type FormValues = z.infer<typeof transactionSchema>;
 
 export default function TransactionBuilder() {
   const { products, profile } = useAuth();
-  // 2. Initialize Form
-  const { control, handleSubmit, watch, reset } = useForm<FormValues>({
-    resolver: zodResolver(transactionSchema),
-    defaultValues: { items: [] },
-  });
+  const { control, handleSubmit, watch, setValue, reset } = useForm<FormValues>(
+    {
+      resolver: zodResolver(transactionSchema),
+      defaultValues: { items: [] },
+    }
+  );
 
-  // 3. Use useFieldArray to manage the items list
   const { fields, append, remove, update } = useFieldArray({
     control,
     name: "items",
   });
 
-  // Watch items to calculate total
   const watchedItems = watch("items");
   const total = watchedItems.reduce(
     (sum, i) => sum + i.quantity * i.unitPrice,
@@ -53,16 +45,26 @@ export default function TransactionBuilder() {
     const index = watchedItems.findIndex((i) => i.productId === product.id);
 
     if (index > -1) {
-      // If exists, update quantity
+      const item = watchedItems[index];
+
+      if (item.quantity >= product.stock) {
+        toast.warning("Reached maximum stock");
+        return;
+      }
+
       update(index, {
         ...watchedItems[index],
         quantity: watchedItems[index].quantity + 1,
       });
     } else {
-      // If new, append to array
+      if (product.stock <= 0) {
+        toast.warning("Product is out of stock");
+        return;
+      }
+
       append({
         productId: product.id,
-        name: product.name, // Kept for UI display
+        name: product.name,
         unitPrice: product.price,
         quantity: 1,
       });
@@ -70,12 +72,13 @@ export default function TransactionBuilder() {
   };
 
   const onSubmit = async (data: FormValues) => {
-    // 4. Map data to the format the RPC expects (no 'name' sent to DB)
     const payload = data.items.map((i) => ({
       product_id: i.productId,
       quantity: i.quantity,
       unit_price: i.unitPrice,
     }));
+
+    console.log({ payload });
 
     const { error } = await supabase.rpc("create_transaction", {
       bid: profile?.business_id,
@@ -89,7 +92,7 @@ export default function TransactionBuilder() {
     }
 
     toast.success("Transaction completed");
-    reset(); // Clears the form
+    reset();
   };
 
   return (
@@ -98,49 +101,86 @@ export default function TransactionBuilder() {
         <CardTitle>Add Transaction</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Select
-          onValueChange={(id) => {
-            const p = products.find((p) => p.id === id);
-            if (p) addItem(p);
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Add product" />
-          </SelectTrigger>
-          <SelectContent>
-            {products.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name} (₦{p.price})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 overflow-x-auto">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} onAdd={addItem} />
+          ))}
+        </div>
 
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            className="flex items-center justify-between border p-2 rounded"
-          >
-            <div>
-              <p className="font-medium">{field.name}</p>
-              <p className="text-sm text-muted-foreground">
-                ₦{field.unitPrice}
-              </p>
+        {fields.map((field, index) => {
+          const item = watchedItems[index];
+          const product = products.find((p) => p.id === item.productId);
+          const maxStock = product?.stock || 0;
+          const isMaxed =
+            product && watchedItems[index].quantity >= product.stock;
+
+          return (
+            <div
+              key={field.id}
+              className="flex items-center justify-between border p-2 rounded"
+            >
+              <div>
+                <p className="font-medium">{field.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  ₦{field.unitPrice}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  disabled={item.quantity <= 1}
+                  onClick={() => {
+                    update(index, {
+                      ...item,
+                      quantity: item.quantity - 1,
+                    });
+                  }}
+                >
+                  −
+                </Button>
+                <Input
+                  type="number"
+                  value={item.quantity}
+                  className="w-20"
+                  onChange={(e) => {
+                    let val = parseInt(e.target.value);
+                    if (isNaN(val) || val < 1) val = 1;
+                    if (val > maxStock) {
+                      val = maxStock;
+                      toast.warning(
+                        `Only ${maxStock} units of ${product?.name} in stock`
+                      );
+                    }
+                    setValue(`items.${index}.quantity`, val);
+                  }}
+                />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  disabled={isMaxed}
+                  onClick={() => {
+                    if (item.quantity < maxStock) {
+                      update(index, {
+                        ...item,
+                        quantity: item.quantity + 1,
+                      });
+                    } else {
+                      toast.warning("Reached maximum stock");
+                    }
+                  }}
+                >
+                  +
+                </Button>
+
+                <Button variant="ghost" onClick={() => remove(index)}>
+                  ✕
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                className="w-20"
-                {...control.register(`items.${index}.quantity` as const, {
-                  valueAsNumber: true,
-                })}
-              />
-              <Button variant="ghost" onClick={() => remove(index)}>
-                ✕
-              </Button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div className="text-right font-semibold">
           Total: ₦{total.toFixed(2)}

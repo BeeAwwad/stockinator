@@ -32,6 +32,7 @@
     "react-dom": "^19.2.2",
     "react-hook-form": "^7.60.0",
     "react-lazy-load-image-component": "^1.6.3",
+    "react-multi-carousel": "^2.8.5",
     "react-router-dom": "^7.6.3",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",

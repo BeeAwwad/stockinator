@@ -30,7 +30,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [signOutLoading, setSignOutLoading] = useState(false);
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
-  console.log({ transactions });
+
   const loadProfile = async (userId: string) => {
     try {
       if (!userId) {
@@ -397,26 +397,15 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
           console.log("Realtime transaction change:", payload);
           if (payload.eventType === "INSERT") {
             setTransactionsLoading(true);
-            setTransactions((prev) => [
-              ...prev,
-              payload.new as TransactionProps,
-            ]);
+            loadTransactions();
             setTransactionsLoading(false);
           } else if (payload.eventType === "UPDATE") {
             setTransactionsLoading(true);
-            setTransactions((prev) =>
-              prev.map((tx) =>
-                tx.id === payload.new.id
-                  ? (payload.new as TransactionProps)
-                  : tx
-              )
-            );
+            loadTransactions();
             setTransactionsLoading(false);
           } else if (payload.eventType === "DELETE") {
             setTransactionsLoading(true);
-            setTransactions((prev) =>
-              prev.filter((tx) => tx.id !== payload.old.id)
-            );
+            loadTransactions();
             setTransactionsLoading(false);
           }
         }
