@@ -18,8 +18,28 @@ import {
 import type { ProductProps } from "@/lib/types";
 import { useAuth } from "@/hook/useAuth";
 import ProductCard from "./ProductCard";
+import Carousel from "react-multi-carousel";
+import "react-multi-carousel/lib/styles.css";
 
 type FormValues = z.infer<typeof transactionSchema>;
+
+const responsive = {
+  desktop: {
+    breakpoint: { max: 3000, min: 1024 },
+    items: 4,
+    slidesToSlide: 4,
+  },
+  tablet: {
+    breakpoint: { max: 1024, min: 464 },
+    items: 3,
+    slidesToSlide: 3,
+  },
+  mobile: {
+    breakpoint: { max: 464, min: 0 },
+    items: 2,
+    slidesToSlide: 2,
+  },
+};
 
 export default function TransactionBuilder() {
   const { products, profile } = useAuth();
@@ -95,17 +115,30 @@ export default function TransactionBuilder() {
     reset();
   };
 
+  //const isMobile =
+  //   typeof window !== "undefined" && /Mobi|Android/i.test(navigator.userAgent);
+
   return (
     <Card className="rounded shadow-none border">
       <CardHeader>
-        <CardTitle>Add Transaction</CardTitle>
+        <CardTitle className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">
+          Add Transaction
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 overflow-x-auto">
+        <Carousel
+          responsive={responsive}
+          removeArrowOnDeviceType={["mobile"]}
+          containerClass="carousel-container"
+          swipeable={true}
+          autoPlaySpeed={2000}
+          itemClass="carousel-item-padding-40-px"
+          arrows={true}
+        >
           {products.map((product) => (
             <ProductCard key={product.id} product={product} onAdd={addItem} />
           ))}
-        </div>
+        </Carousel>
 
         {fields.map((field, index) => {
           const item = watchedItems[index];

@@ -70,7 +70,7 @@ const Dashboard = () => {
         <h1 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">
           Dashboard
         </h1>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:max-w-xl md:max-w-4xl lg:max-w-6xl mx-auto">
           <Card className="rounded shadow-none border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -134,8 +134,7 @@ const Dashboard = () => {
                   </ItemContent>
                   <ItemActions>
                     <Button
-                      variant="destructive"
-                      className="text-sm rounded"
+                      className="text-sm rounded hover:bg-red-700 transition-colors"
                       onClick={() => {
                         setBusinessId(profile?.business_id ?? null);
                         setDeleteDialogOpen(true);

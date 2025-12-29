@@ -12,6 +12,7 @@ export type ProductProps = {
   name: string;
   sku: string;
   price: number;
+  cost_price: number;
   stock: number;
   business_id: string;
   image_url: string | null;

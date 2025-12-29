@@ -31,6 +31,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { profile, signOutLoading, signOutUser } = useAuth();
   const location = useLocation();
+  console.log({ profile });
 
   const toggleNavbar = () => {
     setIsOpen(!isOpen);
@@ -51,7 +52,6 @@ const Navbar = () => {
       id="navbar"
       className="h-16 w-full bg-white border-b border-neutral-200 flex items-center justify-between md:px-16 sm:px-10 px-4 fixed top-0 transition-all ease-in-out duration-300 z-50"
     >
-      {/* Logo */}
       <div className="flex items-center gap-2">
         <Link
           to={profile ? "/" : "/login"}
@@ -61,7 +61,6 @@ const Navbar = () => {
         </Link>
       </div>
 
-      {/* Hamburger Menu for Mobile */}
       <Activity
         mode={
           location.pathname === "/login" ||
@@ -72,19 +71,21 @@ const Navbar = () => {
         }
       >
         <div className="md:hidden">
-          <Button onClick={toggleNavbar} size={"icon"}>
+          <Button
+            onClick={toggleNavbar}
+            className="active:scale-125 transition-transform"
+            size={"icon"}
+          >
             <AlignJustify size={24} />
           </Button>
         </div>
       </Activity>
-      {/* Navbar items and buttons */}
       <div
         className={`fixed md:static top-0 right-0 h-screen md:h-auto w-full md:w-auto bg-gray-50 border-l md:border-none border-gray-300 md:bg-transparent shadow-lg md:shadow-none transition-transform duration-300 ease-in-out transform flex-1 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } md:translate-x-0 z-60`}
       >
         <div className="w-full md:hidden flex items-center justify-between px-6 border-b-2">
-          {/* Logo */}
           <Link
             to={profile ? "/" : "/login"}
             className="text-lg font-semibold text-black flex items-center gap-x-2"
@@ -94,14 +95,17 @@ const Navbar = () => {
           </Link>
 
           <div className="md:hidden flex justify-end py-4">
-            <Button onClick={toggleNavbar} size={"icon"}>
+            <Button
+              onClick={toggleNavbar}
+              className="active:scale-125 transition-transform"
+              size={"icon"}
+            >
               <X size={28} />
             </Button>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row items-center justify-between md:justify-center gap-6 p-6 md:p-0">
-          {/* Navbar items */}
           <ul className="flex flex-col md:flex-row items-center text-base gap-4 md:gap-1 text-neutral-700 font-normal">
             <Activity mode={profile?.business_id ? "visible" : "hidden"}>
               <>

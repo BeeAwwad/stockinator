@@ -121,8 +121,7 @@ const VendorAndInviteList = () => {
                   mode={profile.role === "owner" ? "visible" : "hidden"}
                 >
                   <Button
-                    variant="destructive"
-                    className="text-sm rounded"
+                    className="text-sm rounded hover:bg-red-700 transition-colors"
                     onClick={() =>
                       setPendingDelete({ id: v.id, type: "vendor" })
                     }

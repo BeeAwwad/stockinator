@@ -98,6 +98,7 @@ export default function AddProduct() {
         name: data.name,
         sku,
         price: Number(data.price),
+        cost_price: Number(data.cost_price),
         stock: Number(data.stock),
         image_url: imageUrl,
       },
@@ -147,6 +148,15 @@ export default function AddProduct() {
           <Input className="rounded" placeholder="Name" {...register("name")} />
           {errors.name && (
             <p className="text-red-500 text-sm">{errors.name.message}</p>
+          )}
+          <Input
+            placeholder="Cost Price"
+            className="rounded"
+            type="number"
+            {...register("price", { valueAsNumber: true })}
+          />
+          {errors.cost_price && (
+            <p className="text-red-500 text-sm">{errors.cost_price.message}</p>
           )}
           <Input
             placeholder="Price"

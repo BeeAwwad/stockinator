@@ -303,6 +303,25 @@ export default function ProductList() {
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-xs  text-muted-foreground">
+                                  Cost Price
+                                </Label>
+                                <Input
+                                  className="text-sm h-[2.13rem] py-1.5 rounded"
+                                  defaultValue={product.cost_price}
+                                  type="number"
+                                  onChange={(e) =>
+                                    setEditing((prev) => ({
+                                      ...prev,
+                                      [product.id]: {
+                                        ...prev[product.id],
+                                        price: Number(e.target.value),
+                                      },
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs  text-muted-foreground">
                                   Price
                                 </Label>
                                 <Input
@@ -348,6 +367,14 @@ export default function ProductList() {
                                 </Label>
                                 <p className="text-sm py-1.5 border-b">
                                   {product.name}
+                                </p>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">
+                                  Cost Price
+                                </Label>
+                                <p className="text-sm py-1.5 border-b">
+                                  {product.cost_price}
                                 </p>
                               </div>
                               <div className="space-y-1">
@@ -406,7 +433,7 @@ export default function ProductList() {
                         ) : (
                           <Button
                             variant="outline"
-                            className="text-rose-600 rounded"
+                            className="hover:text-red-600 transition-colors rounded"
                             onClick={() => {
                               setPendingDeleteId(product.id);
                               setDeleteDialogOpen(true);

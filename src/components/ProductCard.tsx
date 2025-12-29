@@ -18,7 +18,7 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
           onAdd(product);
         }
       }}
-      className="relative cursor-pointer border rounded  p-3 group hover:px-3.5 transition-all flex flex-col gap-2"
+      className="relative cursor-pointer border rounded  p-3 group hover:px-3.5 active:px-3.5 transition-all mr-3 flex flex-col gap-2"
     >
       <div className="overflow-hidden h-24 relative rounded">
         <LazyLoadImage

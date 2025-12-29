@@ -18,6 +18,7 @@ export const productSchema = z.object({
   price: z
     .number({ invalid_type_error: "Amount must be a number" })
     .min(50, "Price must be at least 50"),
+  cost_price: z.number().min(0, "Cost price must be ≥ 0"),
   stock: z
     .number({ invalid_type_error: "Stock must be a number" })
     .min(1, "Stock must be at least 1"),
