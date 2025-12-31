@@ -1,9 +1,9 @@
 import AddProduct from "@/components/AddProduct";
 import ProductList from "@/components/ProductList";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 export default function ProductsPage() {
-  const { profile, profileLoading } = useAuth();
+  const { profile, profileLoading } = useAppContext();
 
   if (profileLoading) return <p>Loading...</p>;
 
@@ -11,8 +11,8 @@ export default function ProductsPage() {
 
   return (
     <div className="py-6 flex flex-col items-center">
-    	<AddProduct /> 
-    	<ProductList />
+      <AddProduct />
+      <ProductList />
     </div>
   );
 }

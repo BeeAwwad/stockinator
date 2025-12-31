@@ -1,8 +1,8 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { profile, profileLoading } = useAuth();
+  const { profile, profileLoading } = useAppContext();
 
   if (profileLoading) return <div>Loading...</div>;
 

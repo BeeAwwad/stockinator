@@ -1,8 +1,8 @@
 import { useState, useEffect, Activity } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { AlignJustify, X } from "lucide-react";
+import { AlignJustify, X, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 import { Spinner } from "./ui/spinner";
 
 const NavLink = ({
@@ -29,7 +29,7 @@ const NavLink = ({
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { profile, signOutLoading, signOutUser } = useAuth();
+  const { profile, signOutLoading, signOutUser } = useAppContext();
   const location = useLocation();
   console.log({ profile });
 
@@ -50,12 +50,12 @@ const Navbar = () => {
   return (
     <div
       id="navbar"
-      className="h-16 w-full bg-white border-b border-neutral-200 flex items-center justify-between md:px-16 sm:px-10 px-4 fixed top-0 transition-all ease-in-out duration-300 z-50"
+      className="h-16 w-full bg-primary-100 flex items-center justify-between md:px-16 sm:px-10 px-4 fixed top-0 transition-all ease-in-out duration-300 z-50"
     >
       <div className="flex items-center gap-2">
         <Link
           to={profile ? "/" : "/login"}
-          className="text-lg font-medium text-black flex items-center hover:underline gap-x-2"
+          className="text-lg font-medium text-white fex items-center hover:underline gap-x-2"
         >
           Stokinator
         </Link>
@@ -73,7 +73,7 @@ const Navbar = () => {
         <div className="md:hidden">
           <Button
             onClick={toggleNavbar}
-            className="active:scale-125 transition-transform"
+            className="active:scale-125 bg-primary-400 transition-transform"
             size={"icon"}
           >
             <AlignJustify size={24} />
@@ -81,14 +81,14 @@ const Navbar = () => {
         </div>
       </Activity>
       <div
-        className={`fixed md:static top-0 right-0 h-screen md:h-auto w-full md:w-auto bg-gray-50 border-l md:border-none border-gray-300 md:bg-transparent shadow-lg md:shadow-none transition-transform duration-300 ease-in-out transform flex-1 ${
+        className={`fixed md:static top-0 right-0 h-screen md:h-auto w-full md:w-auto bg-primary-100 text-white border-l md:border-none border-gray-800 md:bg-transparent shadow-lg md:shadow-none transition-transform duration-300 ease-in-out transform flex-1 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } md:translate-x-0 z-60`}
       >
-        <div className="w-full md:hidden flex items-center justify-between px-6 border-b-2">
+        <div className="w-full md:hidden flex items-center justify-between px-6">
           <Link
             to={profile ? "/" : "/login"}
-            className="text-lg font-semibold text-black flex items-center gap-x-2"
+            className="text-lg font-semibold text-white flex items-center gap-x-2"
             onClick={closeNavbar}
           >
             Stokinator
@@ -97,7 +97,7 @@ const Navbar = () => {
           <div className="md:hidden flex justify-end py-4">
             <Button
               onClick={toggleNavbar}
-              className="active:scale-125 transition-transform"
+              className="active:scale-125 bg-primary-300 transition-transform"
               size={"icon"}
             >
               <X size={28} />
@@ -106,7 +106,7 @@ const Navbar = () => {
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row items-center justify-between md:justify-center gap-6 p-6 md:p-0">
-          <ul className="flex flex-col md:flex-row items-center text-base gap-4 md:gap-1 text-neutral-700 font-normal">
+          <ul className="flex flex-col md:flex-row items-center text-base gap-4 md:gap-1 text-white font-normal">
             <Activity mode={profile?.business_id ? "visible" : "hidden"}>
               <>
                 <NavLink
@@ -141,13 +141,12 @@ const Navbar = () => {
 
           <Activity mode={profile ? "visible" : "hidden"}>
             <Button
-              variant={"destructive"}
               size={"lg"}
               onClick={() => {
                 signOutUser();
                 closeNavbar();
               }}
-              className="md:hidden flex rounded"
+              className="md:hidden flex rounded bg-primary-400 text-white transition-colors hover:bg-primary-300"
             >
               <Activity mode={signOutLoading ? "visible" : "hidden"}>
                 <Spinner />
@@ -162,11 +161,12 @@ const Navbar = () => {
         <Button
           variant={"destructive"}
           onClick={signOutUser}
-          className="hidden md:flex rounded"
+          className="hidden md:flex rounded bg-primary-400 text-white transition-colors hover:bg-primary-300 cursor-pointer"
         >
           <Activity mode={signOutLoading ? "visible" : "hidden"}>
             <Spinner />
           </Activity>
+          <LogOut size={24} />
           Sign Out
         </Button>
       </Activity>

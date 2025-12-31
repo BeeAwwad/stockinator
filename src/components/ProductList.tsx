@@ -25,7 +25,7 @@ import { Label } from "./ui/label";
 import { supabase } from "@/lib/supabaseClient";
 import type { ProductProps } from "@/lib/types";
 import { Input } from "./ui/input";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { CameraIcon, X } from "lucide-react";
 
@@ -84,7 +84,7 @@ export default function ProductList() {
     string | null
   >(null);
   const [isEditingId, setIsEditingId] = useState<string | null>(null);
-  const { products, setProducts, profile, productsLoading } = useAuth();
+  const { products, setProducts, profile, productsLoading } = useAppContext();
   const [isUploadingImageId, setIsUploadingImageId] = useState<string | null>(
     null
   );
@@ -235,7 +235,7 @@ export default function ProductList() {
                         <div className="relative group overflow-hidden rounded mb-4">
                           <LazyLoadImage
                             src={product.image_url ?? "/placeholder.png"}
-                            className={`w-full h-48 object-cover transition-all duration-300 ${
+                            className={`w-full h-32 object-cover transition-all duration-300 ${
                               isEditingId === product.id
                                 ? "cursor-pointer group-hover:scale-105"
                                 : ""
@@ -314,7 +314,7 @@ export default function ProductList() {
                                       ...prev,
                                       [product.id]: {
                                         ...prev[product.id],
-                                        price: Number(e.target.value),
+                                        cost_price: Number(e.target.value),
                                       },
                                     }))
                                   }

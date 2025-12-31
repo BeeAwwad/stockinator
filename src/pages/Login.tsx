@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 const loginSchema = z
   .object({
@@ -46,7 +46,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { signInUser, signUpNewUser, profile } = useAuth();
+  const { signInUser, signUpNewUser, profile } = useAppContext();
 
   const form = useForm<FormData>({
     resolver: zodResolver(loginSchema),

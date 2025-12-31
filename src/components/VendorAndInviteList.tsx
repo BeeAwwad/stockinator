@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/item";
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 import { Loader2 } from "lucide-react";
 
 const VendorAndInviteList = () => {
@@ -34,7 +34,7 @@ const VendorAndInviteList = () => {
     invitesLoading,
     invites,
     setInvites,
-  } = useAuth();
+  } = useAppContext();
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;

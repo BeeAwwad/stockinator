@@ -21,11 +21,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { profile, invites, invitesLoading, reloadProfile } = useAuth();
+  const { profile, invites, invitesLoading, reloadProfile } = useAppContext();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedInvite, setSelectedInvite] = useState<InviteProps | null>(
     null

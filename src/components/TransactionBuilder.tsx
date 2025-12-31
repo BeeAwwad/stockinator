@@ -16,7 +16,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import type { ProductProps } from "@/lib/types";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 import ProductCard from "./ProductCard";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
@@ -42,7 +42,7 @@ const responsive = {
 };
 
 export default function TransactionBuilder() {
-  const { products, profile } = useAuth();
+  const { products, profile } = useAppContext();
   const { control, handleSubmit, watch, setValue, reset } = useForm<FormValues>(
     {
       resolver: zodResolver(transactionSchema),

@@ -12,7 +12,7 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,7 +48,7 @@ const uploadProductImage = async (
 };
 
 export default function AddProduct() {
-  const { profile } = useAuth();
+  const { profile } = useAppContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const {
@@ -61,6 +61,7 @@ export default function AddProduct() {
     defaultValues: {
       name: "",
       price: undefined,
+      cost_price: undefined,
       stock: undefined,
     },
   });
@@ -153,13 +154,13 @@ export default function AddProduct() {
             placeholder="Cost Price"
             className="rounded"
             type="number"
-            {...register("price", { valueAsNumber: true })}
+            {...register("cost_price", { valueAsNumber: true })}
           />
           {errors.cost_price && (
             <p className="text-red-500 text-sm">{errors.cost_price.message}</p>
           )}
           <Input
-            placeholder="Price"
+            placeholder="Sell Price"
             className="rounded"
             type="number"
             {...register("price", { valueAsNumber: true })}

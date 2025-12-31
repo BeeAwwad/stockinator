@@ -30,13 +30,13 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { twMerge } from "tailwind-merge";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 const Dashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [confirmName, setConfirmName] = useState("");
-  const { profile, businessName } = useAuth();
+  const { profile, businessName } = useAppContext();
   const navigate = useNavigate();
 
   const handleDelete = async (businessId: string) => {

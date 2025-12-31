@@ -118,3 +118,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+@theme {
+  --color-primary-100: #4c525b;
+  --color-primary-200: #e9eef4;
+  --color-primary-300: #e04f4a;
+  --color-primary-400: #37bf96;
+}

@@ -9,11 +9,19 @@ import type {
   ProfileProps,
   TransactionProps,
 } from "@/lib/types";
-import { AuthContext } from "./AuthContext";
+import { Context } from "./Context";
 import { useNavigate } from "react-router-dom";
 import { useOnlineStatus } from "@/hook/useOnlineStatus";
+import {
+  loadProfile,
+  loadBusinessName,
+  loadInvites,
+  loadProducts,
+  loadVendors,
+  loadTransactions,
+} from "@/lib/functions";
 
-export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
+export const ContextProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileProps | null>(null);
@@ -31,33 +39,8 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
 
-  const loadProfile = async (userId: string) => {
-    try {
-      if (!userId) {
-        console.warn("loadProfile called with invalid userId:", userId);
-        return;
-      }
-      console.log("loading profile...");
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        console.error("Error loading profile:", error.message);
-        return;
-      }
-      localStorage.setItem("profile", JSON.stringify(data));
-      setProfile(data);
-    } catch {
-      const catched = localStorage.getItem("profile");
-      if (catched) setProfile(JSON.parse(catched));
-    }
-  };
-
   const reloadProfile = async () => {
-    if (user) await loadProfile(user.id);
+    if (user) await loadProfile({ userId: user.id, setProfile });
   };
 
   const initialize = async () => {
@@ -66,22 +49,12 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
 
-    const catchedProfile = localStorage.getItem("profile");
-
     if (session?.user) {
       setSession(session);
       setUser(session.user);
       console.log("laoding profile");
 
-      try {
-        await loadProfile(session.user.id);
-      } catch {
-        if (catchedProfile) setProfile(JSON.parse(catchedProfile));
-        setProfileLoading(false);
-      }
-    } else if (catchedProfile) {
-      setProfile(JSON.parse(catchedProfile));
-      setProfileLoading(false);
+      await loadProfile({ userId: session.user.id, setProfile });
     } else {
       setUser(null);
       setProfile(null);
@@ -100,7 +73,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
         if (newSession?.user) {
           setUser(newSession.user);
-          loadProfile(newSession.user.id);
+          loadProfile({ userId: newSession.user.id, setProfile });
         } else {
           setUser(null);
           setProfile(null);
@@ -111,22 +84,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const loadBusinessName = async () => {
-    if (!profile) return;
-
-    if (profile.business_id) {
-      const { data: businessData } = await supabase
-        .from("businesses")
-        .select("name")
-        .eq("id", profile.business_id)
-        .single();
-
-      if (businessData) {
-        setBusinessName(businessData.name);
-      }
-    }
-  };
-
   useEffect(() => {
     setBusinessName("");
     setInvites([]);
@@ -135,45 +92,21 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     setTransactions([]);
 
     if (profile?.id) {
-      loadInvites();
+      loadInvites({
+        isOnline,
+        profile,
+        setInvites,
+        setInvitesLoading,
+        invites,
+      });
     }
     if (profile?.business_id) {
-      loadBusinessName();
-      loadProducts();
+      loadBusinessName({ profile, setBusinessName });
+      loadProducts({ isOnline, profile, setProducts, setProductsLoading });
     }
   }, [profile?.id, profile?.business_id]);
 
   // Load Invites
-  const loadInvites = async () => {
-    if (!isOnline || !profile?.id) return;
-
-    setInvitesLoading(true);
-
-    let query = supabase
-      .from("invites")
-      .select(
-        "*, inviter:profiles!invites_invited_by_fkey(email), invited:profiles!invites_invited_user_id_fkey(email)"
-      )
-      .order("created_at", { ascending: false });
-
-    if (profile.role === "owner" && profile.business_id) {
-      query = query.eq("business_id", profile.business_id);
-    } else {
-      query = query.eq("invited_user_id", profile.id);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Error fetching invites:", error);
-      setInvitesLoading(false);
-    } else {
-      setInvites(data ?? []);
-      console.log("invites reloaded", invites);
-    }
-    setInvitesLoading(false);
-  };
-
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -198,10 +131,22 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         (payload) => {
           if (payload.eventType === "INSERT") {
             console.log("invite inserted");
-            loadInvites();
+            loadInvites({
+              isOnline,
+              profile,
+              setInvites,
+              setInvitesLoading,
+              invites,
+            });
           } else if (payload.eventType === "DELETE") {
             console.log("invite deleted");
-            loadInvites();
+            loadInvites({
+              isOnline,
+              profile,
+              setInvites,
+              setInvitesLoading,
+              invites,
+            });
           }
         }
       )
@@ -213,31 +158,10 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   }, [profile?.id, profile?.business_id]);
 
   // Products
-  const loadProducts = async () => {
-    if (!isOnline || !profile?.business_id) return;
-    setProductsLoading(true);
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("business_id", profile?.business_id)
-      .order("created_at", { ascending: false });
-    if (error) {
-      console.error(error);
-      toast.error("Failed to load products.");
-      return;
-    }
-    setProducts(
-      data.sort((a, b) => {
-        return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-      })
-    );
-    setProductsLoading(false);
-  };
 
   useEffect(() => {
-    if (profile?.business_id) loadProducts();
+    if (profile?.business_id)
+      loadProducts({ isOnline, profile, setProducts, setProductsLoading });
   }, [profile?.business_id]);
 
   useEffect(() => {
@@ -298,26 +222,10 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   }, [profile?.id]);
 
   // Load vendors
-  const loadVendors = async () => {
-    if (!isOnline || !profile?.id) return;
-
-    const { error, data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("business_id", profile?.business_id)
-      .eq("role", "vendor");
-    setVendors(data || []);
-    if (error) {
-      console.error(error);
-      toast.error("Failed to load vendors");
-      setVendorsLoading(false);
-    }
-    setVendorsLoading(false);
-  };
 
   useEffect(() => {
-    if (isOnline) {
-      loadVendors();
+    if (isOnline && profile) {
+      loadVendors({ isOnline, profile, setVendors, setVendorsLoading });
     }
   }, [profile?.business_id, isOnline]);
 
@@ -354,30 +262,14 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
   // Load Transactions
 
-  const loadTransactions = async () => {
-    if (!isOnline || !profile?.id) return;
-
-    setTransactionsLoading(true);
-    const { data, error } = await supabase
-      .from("transactions")
-      .select(
-        "*, created_by_email:profiles!transactions_created_by_fkey(email), items:transaction_items(id, transaction_id, product_id, quantity, unit_price, products(name))"
-      )
-      .eq("business_id", profile?.business_id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error(error);
-      toast.error("Failed to load transactions");
-      return;
-    }
-    setTransactions(data);
-    setTransactionsLoading(false);
-  };
-
   useEffect(() => {
     if (!profile?.business_id) return;
-    loadTransactions();
+    loadTransactions({
+      isOnline,
+      profile,
+      setTransactions,
+      setTransactionsLoading,
+    });
   }, [profile?.business_id]);
 
   useEffect(() => {
@@ -397,15 +289,30 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
           console.log("Realtime transaction change:", payload);
           if (payload.eventType === "INSERT") {
             setTransactionsLoading(true);
-            loadTransactions();
+            loadTransactions({
+              isOnline,
+              profile,
+              setTransactions,
+              setTransactionsLoading,
+            });
             setTransactionsLoading(false);
           } else if (payload.eventType === "UPDATE") {
             setTransactionsLoading(true);
-            loadTransactions();
+            loadTransactions({
+              isOnline,
+              profile,
+              setTransactions,
+              setTransactionsLoading,
+            });
             setTransactionsLoading(false);
           } else if (payload.eventType === "DELETE") {
             setTransactionsLoading(true);
-            loadTransactions();
+            loadTransactions({
+              isOnline,
+              profile,
+              setTransactions,
+              setTransactionsLoading,
+            });
             setTransactionsLoading(false);
           }
         }
@@ -469,7 +376,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider
+    <Context.Provider
       value={{
         session,
         user,
@@ -499,6 +406,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       }}
     >
       {children}
-    </AuthContext.Provider>
+    </Context.Provider>
   );
 };

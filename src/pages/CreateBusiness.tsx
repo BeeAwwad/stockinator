@@ -11,13 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 const CreateBusiness = () => {
   const [businessName, setBusinessName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile } = useAppContext();
 
   useEffect(() => {
     const checkExistingBusiness = async () => {

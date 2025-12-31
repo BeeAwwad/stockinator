@@ -11,10 +11,10 @@ import {
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 const InviteVendor = () => {
-  const { profile, vendors, invites } = useAuth();
+  const { profile, vendors, invites } = useAppContext();
   const [email, setEmail] = useState("");
 
   const handleInviteVendor = async () => {

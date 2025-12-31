@@ -21,7 +21,7 @@ import {
 } from "./ui/card";
 import { Spinner } from "./ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 export default function TransactionList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -30,7 +30,7 @@ export default function TransactionList() {
   const [pendingVerifyId, setPendingVerifyId] = useState<string | null>(null);
 
   const { transactions, setTransactions, transactionsLoading, profile } =
-    useAuth();
+    useAppContext();
 
   console.log({ transactions });
 

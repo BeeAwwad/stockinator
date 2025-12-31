@@ -63,3 +63,9 @@ export type InviteProps = {
     email: string;
   };
 };
+
+export type SalesAnalyticsRow = {
+  interval_start: string;
+  revenue: number;
+  transaction_count: number;
+};

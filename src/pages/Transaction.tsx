@@ -1,9 +1,9 @@
 import TransactionBuilder from "@/components/TransactionBuilder";
 import TransactionList from "@/components/TransactionList";
-import { useAuth } from "@/hook/useAuth";
+import { useAppContext } from "@/hook/useAppContext";
 
 export default function Transaction() {
-  const { profileLoading } = useAuth();
+  const { profileLoading } = useAppContext();
 
   if (profileLoading) return <p>Loading...</p>;
 
