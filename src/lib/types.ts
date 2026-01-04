@@ -64,8 +64,31 @@ export type InviteProps = {
   };
 };
 
-export type SalesAnalyticsRow = {
+export type AnalyticsRange = "24h" | "7d" | "1m" | "3m" | "6m" | "1y";
+
+export type AnalyticsPeriod = "hour" | "day" | "week" | "month";
+
+export type DashboardSummary = {
+  total_revenue: number;
+  total_profit: number;
+  total_transactions: number;
+  top_product_id: string | null;
+  top_product_name: string | null;
+};
+
+export type SalesSeriesRow = {
   interval_start: string;
   revenue: number;
   transaction_count: number;
+};
+
+export type ProductProfitRow = {
+  product_id: string;
+  product_name: string;
+  profit: number;
+};
+
+export type CachedEntry<T> = {
+  data: T;
+  fetchedAt: number;
 };

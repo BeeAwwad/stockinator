@@ -1,34 +1,14 @@
 import type { Dispatch, SetStateAction } from "react";
 import { supabase } from "./supabaseClient";
 import type {
+  AnalyticsRange,
   InviteProps,
   ProductProps,
   ProfileProps,
-  SalesAnalyticsRow,
   TransactionProps,
 } from "./types";
 import { toast } from "sonner";
-
-export const fetchSalesAnalytics = async (params: {
-  businessId: string;
-  period?: "hour" | "day" | "week" | "month" | "year";
-  startDate?: Date;
-}) => {
-  const { businessId, period = "day", startDate } = params;
-
-  const { data, error } = await supabase.rpc("get_sales_analytics", {
-    bid: businessId,
-    period,
-    start_date: startDate?.toISOString(),
-  });
-
-  if (error) {
-    console.error("Analytics RPC error:", error);
-    throw error;
-  }
-
-  return data as SalesAnalyticsRow[];
-};
+import { subHours, subDays, subMonths, subYears } from "date-fns";
 
 export const loadProfile = async ({
   userId,
@@ -214,4 +194,24 @@ export const loadTransactions = async ({
   }
   setTransactions(data);
   setTransactionsLoading(false);
+};
+
+export const getStartDate = (range: AnalyticsRange): Date => {
+  const now = new Date();
+  switch (range) {
+    case "24h":
+      return subHours(now, 24);
+    case "7d":
+      return subDays(now, 7);
+    case "1m":
+      return subMonths(now, 1);
+    case "3m":
+      return subMonths(now, 3);
+    case "6m":
+      return subMonths(now, 6);
+    case "1y":
+      return subYears(now, 1);
+    default:
+      return subHours(now, 24);
+  }
 };

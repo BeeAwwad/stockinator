@@ -20,6 +20,7 @@ import { useAppContext } from "@/hook/useAppContext";
 import ProductCard from "./ProductCard";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
+import CarouselButtonGroup from "./CustomButtonGroup";
 
 type FormValues = z.infer<typeof transactionSchema>;
 
@@ -125,7 +126,7 @@ export default function TransactionBuilder() {
           Add Transaction
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 relative">
         <Carousel
           responsive={responsive}
           removeArrowOnDeviceType={["mobile"]}
@@ -133,13 +134,16 @@ export default function TransactionBuilder() {
           swipeable={true}
           autoPlaySpeed={2000}
           itemClass="carousel-item-padding-40-px"
-          arrows={true}
+          renderButtonGroupOutside={true}
+          arrows={false}
+          customButtonGroup={<CarouselButtonGroup />}
         >
           {products.map((product) => (
             <ProductCard key={product.id} product={product} onAdd={addItem} />
           ))}
         </Carousel>
-
+      </CardContent>
+      <CardFooter className="flex-col gap-1.5">
         {fields.map((field, index) => {
           const item = watchedItems[index];
           const product = products.find((p) => p.id === item.productId);
@@ -150,7 +154,7 @@ export default function TransactionBuilder() {
           return (
             <div
               key={field.id}
-              className="flex items-center justify-between border p-2 rounded"
+              className="flex items-center w-full justify-between border p-2 rounded"
             >
               <div>
                 <p className="font-medium">{field.name}</p>
@@ -215,11 +219,9 @@ export default function TransactionBuilder() {
           );
         })}
 
-        <div className="text-right font-semibold">
+        <div className="text-right font-semibold ml-auto">
           Total: ₦{total.toFixed(2)}
         </div>
-      </CardContent>
-      <CardFooter>
         <Button className="w-full" onClick={handleSubmit(onSubmit)}>
           Complete Sale
         </Button>

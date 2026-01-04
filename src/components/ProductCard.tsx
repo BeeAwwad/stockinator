@@ -26,7 +26,7 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
           effect="black-and-white"
           src={product.image_url || "/placeholder.png"}
           alt={product.name}
-          className="h-24 w-full object-cover rounded group-hover:opacity-90"
+          className="h-20 w-full object-cover rounded group-hover:opacity-90"
         />
       </div>
 

@@ -1,4 +1,4 @@
-import { useState, Activity } from "react";
+import { useState, Activity, useEffect } from "react";
 import InviteVendor from "@/components/InviteVendors";
 import VendorAndInviteList from "@/components/VendorAndInviteList";
 import { Link, useNavigate } from "react-router-dom";
@@ -31,6 +31,17 @@ import { Input } from "@/components/ui/input";
 import { twMerge } from "tailwind-merge";
 import { supabase } from "@/lib/supabaseClient";
 import { useAppContext } from "@/hook/useAppContext";
+import type {
+  AnalyticsPeriod,
+  AnalyticsRange,
+  DashboardSummary,
+  SalesSeriesRow,
+} from "@/lib/types";
+import { dashboardStore } from "@/store/dashboardStore";
+import { SalesChart } from "@/components/SalesChart";
+import { RangeSelector } from "@/components/RangeSelector";
+import { Spinner } from "@/components/ui/spinner";
+import { PeriodSelector } from "@/components/PeriodSelector";
 
 const Dashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -38,6 +49,30 @@ const Dashboard = () => {
   const [confirmName, setConfirmName] = useState("");
   const { profile, businessName } = useAppContext();
   const navigate = useNavigate();
+
+  const [range, setRange] = useState<AnalyticsRange>("7d");
+  const [period, setPeriod] = useState<AnalyticsPeriod>("day");
+
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [series, setSeries] = useState<SalesSeriesRow[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  console.log({ series });
+  useEffect(() => {
+    if (!profile?.business_id) return;
+
+    setLoading(true);
+
+    Promise.all([
+      dashboardStore.getSummary(profile.business_id, range),
+      dashboardStore.getSalesSeries(profile.business_id, range, period),
+    ])
+      .then(([summaryData, seriesData]) => {
+        setSummary(summaryData);
+        setSeries(seriesData);
+      })
+      .finally(() => setLoading(false));
+  }, [profile?.business_id, range, period]);
 
   const handleDelete = async (businessId: string) => {
     if (profile?.role !== "owner") return;
@@ -67,10 +102,20 @@ const Dashboard = () => {
   return (
     <>
       <div className="py-6 space-y-6">
-        <h1 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">
-          Dashboard
-        </h1>
+        <div className="flex justify-between">
+          <h1 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight">
+            Dashboard
+          </h1>
+          <div className="flex items-center gap-2">
+            <Activity mode={loading ? "visible" : "hidden"}>
+              <Spinner />
+            </Activity>
+            <PeriodSelector value={period} onChange={setPeriod} />
+            <RangeSelector value={range} onChange={setRange} />
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:max-w-xl md:max-w-4xl lg:max-w-6xl mx-auto">
+          <SalesChart data={series} />
           <Card className="rounded shadow-none border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -147,8 +192,7 @@ const Dashboard = () => {
               </Activity>
             </CardContent>
           </Card>
-
-          <Card className="rounded shadow-none border">
+          <Card className="rounded shadow-none border w-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Team & Invites
