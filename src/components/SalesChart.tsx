@@ -26,9 +26,9 @@ const chartConfig = {
 
 export function SalesChart({ data }: { data: SalesSeriesRow[] }) {
   return (
-    <Card className="col-span-1 md:col-span-2 shadow-none rounded">
-      <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
-        <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
+    <Card className="col-span-1 md:col-span-3 shadow-none gap-0 rounded">
+      <CardHeader className="flex flex-col items-stretch space-y-0 p-0 border-b-0 sm:flex-row">
+        <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-2 sm:py-3">
           <CardTitle>Revenue Over Time</CardTitle>
           <CardDescription>
             Showing total revenue across the selected period
@@ -46,6 +46,7 @@ export function SalesChart({ data }: { data: SalesSeriesRow[] }) {
             margin={{
               left: 12,
               right: 12,
+              top: 12,
             }}
           >
             <defs>

@@ -21,7 +21,7 @@ export function PeriodSelector({
       value={value}
       onValueChange={(val) => onChange(val as AnalyticsPeriod)}
     >
-      <SelectTrigger>
+      <SelectTrigger className="bg-primary-400 active:bg-primary-300 text-white">
         <SelectValue placeholder="Granularity" />
       </SelectTrigger>
       <SelectContent>

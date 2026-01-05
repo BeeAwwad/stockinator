@@ -97,8 +97,8 @@ const VendorAndInviteList = () => {
   }
 
   return (
-    <div className="mt-6">
-      <h2 className="font-bold mb-2">Vendors</h2>
+    <div className="mt-3">
+      <h2 className="font-semibold mb-2">Vendors</h2>
 
       {vendors.length === 0 && invites.length === 0 ? (
         <p className="text-sm text-gray-500">No vendors yet.</p>
@@ -121,7 +121,7 @@ const VendorAndInviteList = () => {
                   mode={profile.role === "owner" ? "visible" : "hidden"}
                 >
                   <Button
-                    className="text-sm rounded hover:bg-red-700 transition-colors"
+                    className="text-sm rounded hover:bg-primary-300 bg-primary-100 transition-colors"
                     onClick={() =>
                       setPendingDelete({ id: v.id, type: "vendor" })
                     }

@@ -81,32 +81,30 @@ const InviteVendor = () => {
   if (!profile?.business_id) return null;
 
   return (
-    <div className="flex items-center">
-      <Card className="w-full max-w-sm md:max-w-lg lg:max-w-xl rounded shadow-none border">
-        <CardHeader>
-          <CardTitle>Invite Vendor</CardTitle>
-          <CardDescription>Vendors invited: {vendors.length}/2</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Input
-            type="email"
-            value={email}
-            className="rounded"
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Vendor's email"
-          />
-        </CardContent>
-        <CardFooter>
-          <Button
-            className="w-full rounded"
-            onClick={handleInviteVendor}
-            disabled={!email || vendors.length >= 2}
-          >
-            Add Vendor
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+    <Card className="w-full max-w-sm mx-auto md:max-w-lg lg:max-w-xl rounded shadow-none border">
+      <CardHeader>
+        <CardTitle>Invite Vendor</CardTitle>
+        <CardDescription>Vendors invited: {vendors.length}/2</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Input
+          type="email"
+          value={email}
+          className="rounded"
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Vendor's email"
+        />
+      </CardContent>
+      <CardFooter>
+        <Button
+          className="w-full rounded bg-primary-100 hover:bg-primary-400 active:bg-primary-400 transition-colors"
+          onClick={handleInviteVendor}
+          disabled={!email || vendors.length >= 2}
+        >
+          Add Vendor
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 
