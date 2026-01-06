@@ -1,5 +1,5 @@
-import TransactionBuilder from "@/components/TransactionBuilder";
-import TransactionList from "@/components/TransactionList";
+import TransactionBuilder from "@/components/transactions/TransactionBuilder";
+import TransactionList from "@/components/transactions/TransactionList";
 import { useAppContext } from "@/hook/useAppContext";
 
 export default function Transaction() {

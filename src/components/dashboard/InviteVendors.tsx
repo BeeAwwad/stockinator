@@ -7,9 +7,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "./ui/card";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
+} from "../ui/card";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { useAppContext } from "@/hook/useAppContext";
 

@@ -1,5 +1,5 @@
-import AddProduct from "@/components/AddProduct";
-import ProductList from "@/components/ProductList";
+import AddProduct from "@/components/product/AddProduct";
+import ProductList from "@/components/product/ProductList";
 import { useAppContext } from "@/hook/useAppContext";
 
 export default function ProductsPage() {

@@ -1,7 +1,7 @@
 import { Activity, useState } from "react";
-import { Card, CardContent } from "./ui/card";
-import { Item, ItemContent, ItemDescription, ItemActions } from "./ui/item";
-import { Button } from "./ui/button";
+import { Card, CardContent } from "../ui/card";
+import { Item, ItemContent, ItemDescription, ItemActions } from "../ui/item";
+import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { twMerge } from "tailwind-merge";

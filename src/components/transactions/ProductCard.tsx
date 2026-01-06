@@ -18,15 +18,16 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
           onAdd(product);
         }
       }}
-      className="relative cursor-pointer border rounded  p-3 group hover:px-3.5 active:px-3.5 transition-all mr-3 flex flex-col gap-2"
+      className="relative cursor-pointer border rounded p-3 group hover:px-3.5 active:px-3.5 transition-all mr-3 flex flex-col gap-2"
     >
-      <div className="overflow-hidden h-24 relative rounded">
+      <div className="overflow-hidden h-20 max-h-20 rounded">
         <LazyLoadImage
           placeholderSrc="/placeholder.png"
           effect="black-and-white"
           src={product.image_url || "/placeholder.png"}
           alt={product.name}
-          className="h-20 w-full object-cover rounded group-hover:opacity-90"
+          wrapperClassName="w-full h-full"
+          className="w-full h-full object-cover rounded"
         />
       </div>
 
@@ -44,7 +45,7 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
       <div className="space-y-1">
         <p className="font-medium">{product.name}</p>
         <p className="text-sm text-muted-foreground">Stock: {product.stock}</p>
-        <p className="text-sm font-semibold">₦{product.price}</p>
+        <p className="text-sm font-medium">₦{product.price}</p>
       </div>
     </div>
   );

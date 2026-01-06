@@ -1,6 +1,6 @@
 import { useState, Activity, useEffect } from "react";
-import InviteVendor from "@/components/InviteVendors";
-import VendorAndInviteList from "@/components/VendorAndInviteList";
+import InviteVendor from "@/components/dashboard/InviteVendors";
+import VendorAndInviteList from "@/components/dashboard/VendorAndInviteList";
 
 import {
   Card,
@@ -19,16 +19,20 @@ import type {
   SalesSeriesRow,
 } from "@/lib/types";
 import { dashboardStore } from "@/store/dashboardStore";
-import { SalesChart } from "@/components/SalesChart";
-import { RangeSelector } from "@/components/RangeSelector";
+import { SalesChart } from "@/components/dashboard/SalesChart";
+import {
+  RangeSelector,
+  MobileRangeSelector,
+} from "@/components/dashboard/RangeSelector";
 import { Spinner } from "@/components/ui/spinner";
-import { PeriodSelector } from "@/components/PeriodSelector";
-import KPICard from "@/components/KPICard";
-import { ProductProfitChart } from "@/components/ProductProfitChart";
+import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
+import KPICard from "@/components/dashboard/KPICard";
+import { ProductProfitChart } from "@/components/dashboard/ProductProfitChart";
+import { useIsMobile } from "@/hook/useIsMobile";
 
 const Dashboard = () => {
   const { profile, businessName } = useAppContext();
-
+  const isMobile = useIsMobile();
   const [range, setRange] = useState<AnalyticsRange>("7d");
   const [period, setPeriod] = useState<AnalyticsPeriod>("day");
 
@@ -67,7 +71,12 @@ const Dashboard = () => {
               <Spinner />
             </Activity>
             <PeriodSelector value={period} onChange={setPeriod} />
-            <RangeSelector value={range} onChange={setRange} />
+            <Activity mode={!isMobile ? "visible" : "hidden"}>
+              <RangeSelector value={range} onChange={setRange} />
+            </Activity>
+            <Activity mode={isMobile ? "visible" : "hidden"}>
+              <MobileRangeSelector value={range} onChange={setRange} />
+            </Activity>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:max-w-xl md:max-w-4xl lg:max-w-6xl mx-auto">

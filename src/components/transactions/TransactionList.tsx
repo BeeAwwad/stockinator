@@ -10,7 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "./ui/alert-dialog";
+} from "../ui/alert-dialog";
 import { toast } from "sonner";
 import {
   Card,
@@ -18,8 +18,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "./ui/card";
-import { Spinner } from "./ui/spinner";
+} from "../ui/card";
+import { Spinner } from "../ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
 import { useAppContext } from "@/hook/useAppContext";
 
@@ -173,9 +173,9 @@ export default function TransactionList() {
                   {profile?.role === "owner" && (
                     <>
                       <Button
-                        variant="secondary"
                         size="sm"
-                        className="text-red-600 mt-2.5 rounded"
+                        variant={"secondary"}
+                        className="rounded cursor-pointer hover:bg-primary-300 hover:text-white transition-colors"
                         onClick={() => {
                           setPendingDeleteId(tx.id);
                           setDeleteDialogOpen(true);
@@ -188,7 +188,7 @@ export default function TransactionList() {
                       <Button
                         variant={"secondary"}
                         disabled={tx.verified}
-                        className="rounded"
+                        className="rounded  hover:bg-primary-400 hover:text-white transition-colors"
                         onClick={() => {
                           setPendingVerifyId(tx.id);
                           setVerifyDialogOpen(true);

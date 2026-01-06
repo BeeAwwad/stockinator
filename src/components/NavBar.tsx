@@ -4,6 +4,7 @@ import { AlignJustify, X, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAppContext } from "@/hook/useAppContext";
 import { Spinner } from "./ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 const NavLink = ({
   text,
@@ -151,24 +152,30 @@ const Navbar = () => {
               <Activity mode={signOutLoading ? "visible" : "hidden"}>
                 <Spinner />
               </Activity>
-              Sign Out
+              Log Out
             </Button>
           </Activity>
         </div>
       </div>
 
       <Activity mode={profile ? "visible" : "hidden"}>
-        <Button
-          variant={"destructive"}
-          onClick={signOutUser}
-          className="hidden md:flex rounded bg-primary-400 text-white transition-colors hover:bg-primary-300 cursor-pointer"
-        >
-          <Activity mode={signOutLoading ? "visible" : "hidden"}>
-            <Spinner />
-          </Activity>
-          <LogOut size={24} />
-          Sign Out
-        </Button>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              size={"sm"}
+              onClick={signOutUser}
+              className="hidden md:flex rounded bg-primary-400 text-white transition-colors hover:bg-primary-300 cursor-pointer"
+            >
+              <Activity mode={signOutLoading ? "visible" : "hidden"}>
+                <Spinner />
+              </Activity>
+              <LogOut size={24} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Log Out?</p>
+          </TooltipContent>
+        </Tooltip>
       </Activity>
     </div>
   );

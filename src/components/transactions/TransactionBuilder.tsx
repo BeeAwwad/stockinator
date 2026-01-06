@@ -222,7 +222,10 @@ export default function TransactionBuilder() {
         <div className="text-right font-semibold ml-auto">
           Total: ₦{total.toFixed(2)}
         </div>
-        <Button className="w-full" onClick={handleSubmit(onSubmit)}>
+        <Button
+          className="w-full bg-primary-400 rounded cursor-pointer"
+          onClick={handleSubmit(onSubmit)}
+        >
           Complete Sale
         </Button>
       </CardFooter>

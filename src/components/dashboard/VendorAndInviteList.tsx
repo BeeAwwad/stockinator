@@ -16,7 +16,7 @@ import {
   ItemDescription,
   ItemActions,
 } from "@/components/ui/item";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { useAppContext } from "@/hook/useAppContext";
 import { Loader2 } from "lucide-react";

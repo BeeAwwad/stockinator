@@ -1,4 +1,4 @@
-import { Card, CardContent } from "./ui/card";
+import { Card, CardContent } from "../ui/card";
 import { DollarSign, Crown, TrendingUp, type LucideIcon } from "lucide-react";
 
 type KPICardProps = {

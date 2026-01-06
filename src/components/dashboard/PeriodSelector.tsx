@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectContent,
   SelectItem,
-} from "./ui/select";
+} from "../ui/select";
 
 const periods: AnalyticsPeriod[] = ["hour", "day", "week", "month"];
 

@@ -32,8 +32,6 @@ export function ProductProfitChart({
     }));
   }, [data]);
 
-  console.log({ chartData });
-
   const chartConfig = useMemo(() => {
     const config: ChartConfig = {
       profit: { label: "Profit" },
@@ -46,8 +44,6 @@ export function ProductProfitChart({
     });
     return config;
   }, [data]);
-
-  console.log({ chartConfig });
 
   return (
     <Card className="md:col-span-2 flex flex-col border-none shadow-none bg-white">

@@ -1,4 +1,4 @@
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { ButtonGroupProps } from "react-multi-carousel";
 
@@ -34,7 +34,7 @@ const ArrowButton = ({
       onClick={onClick}
       size={"icon"}
       disabled={isDisabled}
-      className={`${baseStyles} ${colorStyles} group ${className}`}
+      className={`${baseStyles} ${colorStyles} rounded group ${className}`}
     >
       {direction === "left" && (
         <Icon className={`${iconBaseStyles} ${iconHoverStyles} `} />
