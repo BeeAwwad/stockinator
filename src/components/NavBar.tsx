@@ -1,6 +1,6 @@
 import { useState, useEffect, Activity } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { AlignJustify, X, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { AlignJustify, X, LogOut, Settings } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAppContext } from "@/hook/useAppContext";
 import { Spinner } from "./ui/spinner";
@@ -32,7 +32,19 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { profile, signOutLoading, signOutUser } = useAppContext();
   const location = useLocation();
-  console.log({ profile });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   const toggleNavbar = () => {
     setIsOpen(!isOpen);
@@ -74,7 +86,7 @@ const Navbar = () => {
         <div className="md:hidden">
           <Button
             onClick={toggleNavbar}
-            className="active:scale-125 bg-primary-400 transition-transform"
+            className="active:scale-125 bg-primary-400 transition-transform rounded"
             size={"icon"}
           >
             <AlignJustify size={24} />
@@ -98,7 +110,7 @@ const Navbar = () => {
           <div className="md:hidden flex justify-end py-4">
             <Button
               onClick={toggleNavbar}
-              className="active:scale-125 bg-primary-300 transition-transform"
+              className="active:scale-125 bg-primary-300 transition-transform rounded"
               size={"icon"}
             >
               <X size={28} />
@@ -157,26 +169,36 @@ const Navbar = () => {
           </Activity>
         </div>
       </div>
+      <div className="hidden md:flex gap-5">
+        <Activity mode={profile ? "visible" : "hidden"}>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => navigate("/settings")}
+              className="cursor-pointer"
+            >
+              <Settings className="text-white" size={15} />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Settings</p>
+            </TooltipContent>
+          </Tooltip>
 
-      <Activity mode={profile ? "visible" : "hidden"}>
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              size={"sm"}
+          <Tooltip>
+            <TooltipTrigger
               onClick={signOutUser}
-              className="hidden md:flex rounded bg-primary-400 text-white transition-colors hover:bg-primary-300 cursor-pointer"
+              className="hidden md:flex items-center justify-center size-8 rounded bg-primary-400 text-white transition-colors hover:bg-primary-300 cursor-pointer"
             >
               <Activity mode={signOutLoading ? "visible" : "hidden"}>
                 <Spinner />
               </Activity>
-              <LogOut size={24} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Log Out?</p>
-          </TooltipContent>
-        </Tooltip>
-      </Activity>
+              <LogOut size={15} />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Log Out?</p>
+            </TooltipContent>
+          </Tooltip>
+        </Activity>
+      </div>
     </div>
   );
 };

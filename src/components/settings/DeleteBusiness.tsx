@@ -1,5 +1,5 @@
 import { Activity, useState } from "react";
-import { Card, CardContent } from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Item, ItemContent, ItemDescription, ItemActions } from "../ui/item";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
@@ -51,7 +51,10 @@ export const DeleteBusiness = () => {
   };
   return (
     <>
-      <Card>
+      <Card className="rounded">
+        <CardHeader className="border-b">
+          <CardTitle>Delete Business</CardTitle>
+        </CardHeader>
         <CardContent>
           <Activity mode={profile?.role === "owner" ? "visible" : "hidden"}>
             <Item
@@ -65,7 +68,7 @@ export const DeleteBusiness = () => {
               </ItemContent>
               <ItemActions>
                 <Button
-                  className="text-sm rounded hover:bg-red-700 transition-colors"
+                  className="text-sm rounded bg-primary-100 hover:bg-primary-300 transition-colors"
                   onClick={() => {
                     setBusinessId(profile?.business_id ?? null);
                     setDeleteDialogOpen(true);
@@ -79,7 +82,7 @@ export const DeleteBusiness = () => {
         </CardContent>
       </Card>
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Business?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -99,18 +102,19 @@ export const DeleteBusiness = () => {
                 value={confirmName}
                 onChange={(e) => setConfirmName(e.target.value)}
                 className={twMerge(
-                  "text-sm",
+                  "text-sm rounded",
                   confirmName &&
                     confirmName !== businessName &&
-                    "border-rose-500",
-                  confirmName === businessName && "border-green-500"
+                    "border-primary-300",
+                  confirmName === businessName && "border-primary-400"
                 )}
               />
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded">Cancel</AlertDialogCancel>
             <AlertDialogAction
+              className="rounded"
               disabled={confirmName !== businessName}
               onClick={async () => {
                 if (businessId) {

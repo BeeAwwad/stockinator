@@ -9,6 +9,7 @@ import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
 import ResetPassword from "@/pages/ResetPassword";
 import ForgotPassword from "@/pages/ForgotPassword";
+import { Settings } from "@/pages/Settings";
 
 const AppRoutes = () => {
   return (
@@ -25,12 +26,20 @@ const AppRoutes = () => {
         }
       />
       <Route
-     	 path="/register-business" 
-	 element={
-		 <ProtectedRoute>
-		 	<CreateBusiness />
-		 </ProtectedRoute>
-	 } 
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/register-business"
+        element={
+          <ProtectedRoute>
+            <CreateBusiness />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/products"

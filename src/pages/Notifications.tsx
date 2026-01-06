@@ -38,26 +38,15 @@ export default function Notifications() {
 
   const handleAcceptInvite = async (invite: InviteProps) => {
     if (!profile) return;
-    const { id, business_id } = invite;
-
     try {
-      if (!id || !business_id) {
-        toast.error("Invalid invite data.");
+      const { error } = await supabase.rpc("accept_business_invite", {
+        invite_id: invite.id,
+      });
+
+      if (error) {
+        toast.error("Failed to accept invite.");
+        throw error;
       }
-      const { error: updateProfileErr } = await supabase
-        .from("profiles")
-        .update({ business_id: business_id, role: "vendor" })
-        .eq("id", profile.id);
-
-      if (updateProfileErr) throw updateProfileErr;
-
-      const { error: updateInviteErr } = await supabase
-        .from("invites")
-        .delete()
-        .eq("id", id);
-
-      if (updateInviteErr) throw updateInviteErr;
-
       await reloadProfile();
 
       toast.success("Invite accepted! You've joined the business.");
