@@ -104,9 +104,11 @@ const Dashboard = () => {
               </CardTitle>
               <CardDescription>Manage your team members</CardDescription>
             </CardHeader>
-            <CardContent>
-              <InviteVendor />
-            </CardContent>
+            <Activity mode={profile?.role === "owner" ? "visible" : "hidden"}>
+              <CardContent>
+                <InviteVendor />
+              </CardContent>
+            </Activity>
             <CardContent>
               <VendorAndInviteList />
             </CardContent>

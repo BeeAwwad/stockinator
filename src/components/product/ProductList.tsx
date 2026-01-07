@@ -229,7 +229,7 @@ export default function ProductList() {
                             "w-full h-32 object-cover transition-all duration-300 cursor-pointer group-hover:scale-105"
                           }
                         />
-                        {product.image_url && (
+                        {profile?.role === "owner" && product.image_url && (
                           <Button
                             size={"icon"}
                             onClick={() => {
@@ -247,23 +247,25 @@ export default function ProductList() {
                           </div>
                         )}
 
-                        {isUploadingImageId !== product.id && (
-                          <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity text-white">
-                            <CameraIcon className="size-6 mb-1.5" />
-                            <span className="text-xs font-medium">
-                              Change Photo
-                            </span>
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleReplaceImage(product.id, file);
-                              }}
-                            />
-                          </label>
-                        )}
+                        {profile?.role === "owner" &&
+                          isUploadingImageId !== product.id && (
+                            <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity text-white">
+                              <CameraIcon className="size-6 mb-1.5" />
+                              <span className="text-xs font-medium">
+                                Change Photo
+                              </span>
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file)
+                                    handleReplaceImage(product.id, file);
+                                }}
+                              />
+                            </label>
+                          )}
                       </div>
                     </CardContent>
                     {profile?.role === "owner" && (

@@ -2,8 +2,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Activity, useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Card,
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/hook/useAppContext";
+import { Badge } from "@/components/ui/badge";
 
 const loginSchema = z
   .object({
@@ -45,7 +46,10 @@ type FormData = z.infer<typeof loginSchema>;
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
   const navigate = useNavigate();
+  const location = useLocation();
   const { signInUser, signUpNewUser, profile } = useAppContext();
 
   const form = useForm<FormData>({
@@ -62,6 +66,7 @@ const Login = () => {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = form;
   const mode = watch("mode");
@@ -104,6 +109,17 @@ const Login = () => {
     if (profile) navigate("/");
   }, [profile]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const emailParam = params.get("email");
+
+    if (emailParam && mode === "login") {
+      setValue("email", emailParam);
+      setValue("password", import.meta.env.VITE_DEMO_PASSWORD || "");
+      setIsDemoMode(true);
+    }
+  }, [location, mode]);
+
   return (
     <div className="flex items-center justify-center flex-col mt-8">
       <Card className="w-full max-w-md shadow-none border rounded">
@@ -129,12 +145,22 @@ const Login = () => {
           <CardContent className="space-y-4 mb-8">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                className="rounded"
-                id="email"
-                type="email"
-                {...register("email")}
-              />
+              <div className="relative">
+                <Input
+                  className="rounded"
+                  id="email"
+                  type="email"
+                  {...register("email")}
+                />
+                <Activity
+                  mode={isDemoMode && mode === "login" ? "visible" : "hidden"}
+                >
+                  <Badge className="bg-primary-400 rounded ml-auto absolute right-2 top-1/2 -translate-y-1/2">
+                    Demo Mode
+                  </Badge>
+                </Activity>
+              </div>
+
               {errors.email && (
                 <p className="text-red-500 text-xs">{errors.email.message}</p>
               )}
