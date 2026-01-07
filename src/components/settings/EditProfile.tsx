@@ -63,6 +63,7 @@ function EditProfileDialog({ profile }: { profile: ProfileProps }) {
     if (error) {
       toast.error("Update failed.");
       setOpen(false);
+      setLoading(false);
       throw error;
     } else {
       toast.success("Profile updated!");

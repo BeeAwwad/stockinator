@@ -205,23 +205,21 @@ export default function ProductList() {
               <div key={product.id} className="">
                 <>
                   <Card className="rounded shadow-none border">
-                    <CardHeader>
+                    <CardHeader className="flex justify-between items-center">
+                      <h3 className="font-semibold tracking-tight">
+                        {product.name}
+                      </h3>
                       <p className="text-muted-foreground text-end text-xs">
                         SKU: {product.sku}
                       </p>
                     </CardHeader>
                     <CardContent>
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-semibold tracking-tight">
-                            {product.name}
-                          </h3>
-                          <p className="font-semibold text-primary-400">
-                            ₦{product.price}
-                          </p>
-                        </div>
+                      <div className="flex justify-between items-start">
                         <p className="text-sm mt-2 mb-3.5 text-muted-foreground">
                           Stock: {product.stock}
+                        </p>
+                        <p className="font-semibold text-primary-400">
+                          ₦{product.price}
                         </p>
                       </div>
                       <div className="relative group overflow-hidden rounded mb-4">
@@ -327,8 +325,11 @@ export default function ProductList() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel className="rounded">
+                  Cancel
+                </AlertDialogCancel>
                 <AlertDialogAction
+                  className="rounded"
                   onClick={async () => {
                     if (pendingDeleteImageId) {
                       await handleRemoveImage(pendingDeleteImageId);
@@ -365,6 +366,8 @@ function EditProductDialog({ product }: { product: ProductProps }) {
 
     if (error) {
       toast.error("Update failed.");
+      setOpen(false);
+      setLoading(false);
       throw error;
     } else {
       toast.success("Product updated!");
@@ -380,7 +383,7 @@ function EditProductDialog({ product }: { product: ProductProps }) {
           <Edit3 className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="rounded">
         <DialogHeader>Edit Product</DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -397,6 +400,7 @@ function EditProductDialog({ product }: { product: ProductProps }) {
             <Label htmlFor="cost-price">Cost Price</Label>
             <Input
               id="cost-price"
+              className="rounded"
               value={formData.cost_price}
               onChange={(e) =>
                 setFormData({ ...formData, cost_price: Number(e.target.value) })
@@ -407,6 +411,7 @@ function EditProductDialog({ product }: { product: ProductProps }) {
             <Label htmlFor="price">Sell Price</Label>
             <Input
               id="price"
+              className="rounded"
               value={formData.price}
               onChange={(e) =>
                 setFormData({ ...formData, price: Number(e.target.value) })
@@ -417,6 +422,7 @@ function EditProductDialog({ product }: { product: ProductProps }) {
             <Label htmlFor="stock">Stock</Label>
             <Input
               id="stock"
+              className="rounded"
               value={formData.stock}
               onChange={(e) =>
                 setFormData({ ...formData, stock: Number(e.target.value) })
@@ -425,12 +431,16 @@ function EditProductDialog({ product }: { product: ProductProps }) {
           </div>
         </div>
         <DialogFooter>
-          <Button variant={"ghost"} onClick={() => setOpen(false)}>
+          <Button
+            className="rounded"
+            variant={"ghost"}
+            onClick={() => setOpen(false)}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleUpdate}
-            className="bg-primary-100 hover:bg-primary-400 transition-colors"
+            className="bg-primary-100 rounded hover:bg-primary-400 transition-colors"
             disabled={loading}
           >
             {loading && <Spinner />} Save Changes

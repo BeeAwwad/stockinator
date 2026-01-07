@@ -9,6 +9,16 @@ import type {
   CachedEntry,
 } from "@/lib/types";
 
+const TTL = {
+  summary: 2 * 60_000,
+  salesSeries: 7 * 60_000,
+  productProfit: 10 * 60_000,
+};
+
+function isExpired(entry: { fetchedAt: number }, ttl: number) {
+  return Date.now() - entry.fetchedAt > ttl;
+}
+
 type Cache = {
   summary: Record<string, CachedEntry<DashboardSummary>>;
   salesSeries: Record<string, CachedEntry<SalesSeriesRow[]>>;
@@ -36,7 +46,10 @@ export class DashboardStore {
 
   async getSummary(bid: string, range: AnalyticsRange) {
     const key = this.summaryKey(bid, range);
-    if (this.cache.summary[key]) return this.cache.summary[key].data;
+    const cached = this.cache.summary[key];
+    if (cached && !isExpired(cached, TTL.summary)) {
+      return cached.data;
+    }
 
     const { data, error } = await supabase.rpc("get_dashboard_summary", {
       bid,
@@ -59,8 +72,10 @@ export class DashboardStore {
     period: AnalyticsPeriod
   ) {
     const key = this.seriesKey(bid, range, period);
-    if (this.cache.salesSeries[key]) return this.cache.salesSeries[key].data;
-
+    const cached = this.cache.salesSeries[key];
+    if (cached && !isExpired(cached, TTL.salesSeries)) {
+      return cached.data;
+    }
     const { data, error } = await supabase.rpc("get_sales_timeseries", {
       bid,
       period,
@@ -79,8 +94,11 @@ export class DashboardStore {
 
   async getProductProfitSummary(bid: string, range: AnalyticsRange) {
     const key = this.summaryKey(bid, range);
-    if (this.cache.productProfitSummary[key])
-      return this.cache.productProfitSummary[key].data;
+
+    const cached = this.cache.productProfitSummary[key];
+    if (cached && !isExpired(cached, TTL.productProfit)) {
+      return cached.data;
+    }
 
     const { data, error } = await supabase.rpc("get_product_profit_summary", {
       bid,
