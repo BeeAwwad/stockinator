@@ -11,13 +11,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabaseClient";
-import { useAppContext } from "@/hook/useAppContext";
+import { useProfile } from "@/queries/useProfile";
+import { toast } from "sonner";
 
 const CreateBusiness = () => {
   const [businessName, setBusinessName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { profile } = useAppContext();
+  const { data: profile } = useProfile();
 
   useEffect(() => {
     const checkExistingBusiness = async () => {
@@ -37,32 +38,14 @@ const CreateBusiness = () => {
     setLoading(true);
 
     try {
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
+      const { error: bizErr } = await supabase.rpc("create_new_business", {
+        biz_name: businessName,
+      });
 
-      console.log("Current user before insert:", currentUser);
-
-      const { data: business, error: bizErr } = await supabase
-        .from("businesses")
-        .insert({
-          name: businessName,
-          owner_id: profile.id,
-        })
-        .select("id")
-        .single();
-
-      if (bizErr) throw bizErr;
-      console.log("before updating profile...");
-      const { error: profileErr } = await supabase
-        .from("profiles")
-        .update({
-          business_id: business.id,
-          role: "owner",
-        })
-        .eq("id", profile.id);
-
-      if (profileErr) throw profileErr;
+      if (bizErr) {
+        toast.error(bizErr.message ?? "error creating business");
+        throw bizErr;
+      }
       navigate("/");
     } catch (err) {
       console.error("Error creating business:", err);

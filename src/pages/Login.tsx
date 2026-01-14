@@ -17,8 +17,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppContext } from "@/hook/useAppContext";
 import { Badge } from "@/components/ui/badge";
+import { useSignIn } from "@/mutations/useSignIn";
+import { useSignUp } from "@/mutations/useSignUp";
+import { useProfile } from "@/queries/useProfile";
 
 const loginSchema = z
   .object({
@@ -44,14 +46,14 @@ const loginSchema = z
 type FormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { signInUser, signUpNewUser, profile } = useAppContext();
-
+  const { mutate: signIn, isPending: isSignInPending } = useSignIn();
+  const { mutate: signUp, isPending: isSignUpPending } = useSignUp();
+  const { data: profile } = useProfile();
   const form = useForm<FormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -72,26 +74,12 @@ const Login = () => {
   const mode = watch("mode");
 
   const onSubmit = async (data: FormData) => {
+    const { email, password } = data;
     try {
-      console.log("Loading...");
-      setLoading(true);
       if (data.mode === "signup") {
-        const result = await signUpNewUser(data.email, data.password);
-        if (result.success) {
-          toast.success("Welcome");
-        } else {
-          console.log("couldn't sign up. success:", result.success);
-          toast.error("Sorry we couldn't sign you up.");
-        }
+        signUp({ email, password });
       } else {
-        console.log("signing in...");
-        const result = await signInUser(data.email, data.password);
-        console.log("result:", result);
-        if (result.success) {
-          toast.success("Welcome back!");
-        } else {
-          console.log("error:", result.error);
-        }
+        signIn({ email, password });
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -100,14 +88,12 @@ const Login = () => {
       } else {
         toast.error(`An unexpected error occurred during ${mode}`);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (profile) navigate("/");
-  }, [profile]);
+  }, [profile, navigate]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -118,7 +104,27 @@ const Login = () => {
       setValue("password", import.meta.env.VITE_DEMO_PASSWORD || "");
       setIsDemoMode(true);
     }
-  }, [location, mode]);
+  }, [location, mode, setValue]);
+
+  const Showtext = ({
+    isSignUpPending,
+    isSignInPending,
+  }: {
+    isSignUpPending: boolean;
+    isSignInPending: boolean;
+  }) => {
+    if (!isSignInPending && !isSignUpPending) {
+      if (mode === "login") {
+        return "Sign in";
+      } else {
+        return "Sign up";
+      }
+    } else if (isSignInPending) {
+      return "Signing In...";
+    } else if (isSignUpPending) {
+      return "Signing Up...";
+    }
+  };
 
   return (
     <div className="flex items-center justify-center flex-col mt-8">
@@ -221,14 +227,12 @@ const Login = () => {
             </Button>
           </CardAction>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" disabled={loading} className="w-full rounded">
-              {loading
-                ? mode === "signup"
-                  ? "Creating..."
-                  : "Signing in..."
-                : mode === "signup"
-                ? "Sign Up"
-                : "Login"}
+            <Button
+              type="submit"
+              disabled={isSignInPending || isSignUpPending}
+              className="w-full rounded"
+            >
+              {Showtext({ isSignInPending, isSignUpPending })}
             </Button>
             {/* <Button
               type="button"

@@ -52,7 +52,6 @@ const replaceProductImage = async (
 ) => {
   if (oldImageUrl) {
     const oldPath = getFilePathFromUrl(oldImageUrl);
-
     await supabase.storage.from("product_images").remove([oldPath]);
   }
 

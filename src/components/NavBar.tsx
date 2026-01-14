@@ -2,9 +2,10 @@ import { useState, useEffect, Activity } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlignJustify, X, LogOut, Settings } from "lucide-react";
 import { Button } from "./ui/button";
-import { useAppContext } from "@/hook/useAppContext";
 import { Spinner } from "./ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { useProfile } from "@/queries/useProfile";
+import { useSignOut } from "@/mutations/useSignOut";
 
 const NavLink = ({
   text,
@@ -30,10 +31,10 @@ const NavLink = ({
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { profile, signOutLoading, signOutUser } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
-
+  const { data: profile } = useProfile();
+  const { mutate: signOut, isPending: signOutLoading } = useSignOut();
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -156,7 +157,7 @@ const Navbar = () => {
             <Button
               size={"lg"}
               onClick={() => {
-                signOutUser();
+                signOut();
                 closeNavbar();
               }}
               className="md:hidden flex rounded bg-primary-400 text-white transition-colors hover:bg-primary-300"
@@ -185,7 +186,7 @@ const Navbar = () => {
 
           <Tooltip>
             <TooltipTrigger
-              onClick={signOutUser}
+              onClick={() => signOut()}
               className="hidden md:flex items-center justify-center size-8 rounded bg-primary-400 text-white transition-colors hover:bg-primary-300 cursor-pointer"
             >
               <Activity mode={signOutLoading ? "visible" : "hidden"}>

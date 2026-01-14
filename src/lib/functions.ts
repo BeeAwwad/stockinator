@@ -128,13 +128,7 @@ export const loadProducts = async ({
     toast.error("Failed to load products.");
     return;
   }
-  setProducts(
-    data.sort((a, b) => {
-      return (
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-    })
-  );
+  setProducts(data);
   setProductsLoading(false);
 };
 

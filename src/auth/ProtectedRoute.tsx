@@ -1,10 +1,10 @@
 import { Navigate } from "react-router-dom";
-import { useAppContext } from "@/hook/useAppContext";
+import { useProfile } from "@/queries/useProfile";
+import { Spinner } from "@/components/ui/spinner";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { profile, profileLoading } = useAppContext();
-
-  if (profileLoading) return <div>Loading...</div>;
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  if (profileLoading) return <Spinner />;
 
   return profile ? children : <Navigate to={"/login"} />;
 };
