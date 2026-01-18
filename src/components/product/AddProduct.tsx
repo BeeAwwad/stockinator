@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import {
   Card,
@@ -12,7 +11,6 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
-import { useAppContext } from "@/hook/useAppContext";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,36 +18,13 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { productSchema } from "@/lib/schemas";
 import { LazyLoadImage } from "react-lazy-load-image-component";
+import { useAddProducts } from "@/mutations/useAddProduct";
+import { useProfile } from "@/queries/useProfile";
 
 type ProductFormProps = z.infer<typeof productSchema>;
 
-const uploadProductImage = async (
-  file: File,
-  businessId: string
-): Promise<string | null> => {
-  const fileExt = file.name.split(".").pop();
-  const filePath = `${businessId}/${crypto.randomUUID()}.${fileExt}`;
-
-  const { error } = await supabase.storage
-    .from("product_images")
-    .upload(filePath, file);
-
-  if (error) {
-    console.error("Image upload failed:", error);
-    toast.error("Image upload failed");
-    return null;
-  }
-
-  const { data } = supabase.storage
-    .from("product_images")
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
-};
-
 export default function AddProduct() {
-  const { profile } = useAppContext();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: profile } = useProfile();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const {
     register,
@@ -66,55 +41,19 @@ export default function AddProduct() {
     },
   });
 
-  const generateSKU = (name: string) =>
-    `${name.slice(0, 3).toLocaleUpperCase()}-${Date.now()
-      .toString()
-      .slice(-5)}`;
+  const { mutate: AddProduct, isPending } = useAddProducts();
 
   const handleFormSubmit = async (data: ProductFormProps) => {
     if (!profile?.business_id || profile?.role !== "owner") {
       return;
     }
 
-    console.log({ data });
-    setIsSubmitting(true);
-    const sku = generateSKU(data.name);
-    console.log({ sku });
+    AddProduct({ data, businessId: profile?.business_id, imageFile });
 
-    let imageUrl: string | null = null;
-
-    if (imageFile) {
-      imageUrl = await uploadProductImage(imageFile, profile.business_id);
-      if (!imageUrl) {
-        toast.error("image upload failed");
-        setIsSubmitting(false);
-        return;
-      }
-    }
-    console.log({ imageUrl });
-
-    const { error } = await supabase.from("products").insert([
-      {
-        business_id: profile.business_id,
-        name: data.name,
-        sku,
-        price: Number(data.price),
-        cost_price: Number(data.cost_price),
-        stock: Number(data.stock),
-        image_url: imageUrl,
-      },
-    ]);
-    toast.success("insert completed");
-    if (error) {
-      console.error("Failed to add product:", error);
-      setIsSubmitting(false);
-      toast.error("Failed to add product. Please try again.");
-      return;
-    }
-    setIsSubmitting(false);
     reset();
-    toast.success("Product added successfully!");
+    setImageFile(null);
   };
+
   if (profile?.role !== "owner") return null;
 
   return (
@@ -125,7 +64,7 @@ export default function AddProduct() {
         <CardHeader>
           <CardTitle className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 flex justify-between">
             <span>Add Product</span>
-            {isSubmitting ? (
+            {isPending ? (
               <Badge variant="secondary">
                 <Spinner />
                 Submitting
@@ -174,6 +113,9 @@ export default function AddProduct() {
             className="rounded"
             {...register("stock", { valueAsNumber: true })}
           />
+          {errors.stock && (
+            <p className="text-red-500 text-sm">{errors.stock.message}</p>
+          )}
           <Input
             type="file"
             className="rounded"
@@ -190,11 +132,9 @@ export default function AddProduct() {
               setImageFile(file);
             }}
           />
-          {errors.stock && (
-            <p className="text-red-500 text-sm">{errors.stock.message}</p>
-          )}
+
           <Button type="submit" className="w-full rounded mt-3">
-            Add Product
+            {isPending ? "Submitting..." : "Add Product"}
           </Button>
         </CardContent>
       </form>

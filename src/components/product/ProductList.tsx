@@ -19,7 +19,6 @@ import { Label } from "../ui/label";
 import { supabase } from "@/lib/supabaseClient";
 import type { ProductProps } from "@/lib/types";
 import { Input } from "../ui/input";
-import { useAppContext } from "@/hook/useAppContext";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { CameraIcon, Edit3, Trash2, X } from "lucide-react";
 import {
@@ -29,6 +28,9 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "../ui/dialog";
+import { useProducts } from "@/queries/useProducts";
+import { useProfile } from "@/queries/useProfile";
+import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
 
 const getFilePathFromUrl = (url: string) => {
   const parts = url.split("/product_images/");
@@ -78,32 +80,21 @@ export default function ProductList() {
   const [pendingDeleteImageId, setPendingDeleteImageId] = useState<
     string | null
   >(null);
-  const { products, setProducts, profile, productsLoading } = useAppContext();
   const [isUploadingImageId, setIsUploadingImageId] = useState<string | null>(
     null
   );
-
+  const { data: profile } = useProfile();
+  const { data: products, isLoading: productsLoading } = useProducts(
+    profile?.business_id ?? ""
+  );
   const handleDelete = async (id: string) => {
     if (profile?.role !== "owner") return;
-    const deletedProduct = products.find((p) => p.id === id);
-    setProducts((prev) =>
-      prev
-        .filter((p) => p.id !== id)
-        .sort((a, b) => {
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-        })
-    );
+    const deletedProduct = products?.find((p) => p.id === id);
 
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       console.error(error);
       toast.error("Failed to delete product.");
-      if (deletedProduct) {
-        setProducts((prev) => [...prev, deletedProduct]);
-        return;
-      }
     }
 
     if (deletedProduct?.image_url) {
@@ -121,7 +112,7 @@ export default function ProductList() {
   };
 
   const handleRemoveImage = async (id: string) => {
-    const product = products.find((p) => p.id === id);
+    const product = products?.find((p) => p.id === id);
     if (!product || !product.image_url) return;
 
     const toastId = toast.loading("Removing image...");
@@ -135,10 +126,6 @@ export default function ProductList() {
         .eq("id", id);
 
       if (error) throw error;
-
-      setProducts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, image_url: null } : p))
-      );
 
       toast.success("Image removed", { id: toastId });
       setDeleteImageDialogOpen(false);
@@ -159,7 +146,7 @@ export default function ProductList() {
     const toastId = toast.loading("Uploading new image...");
 
     try {
-      const product = products.find((p) => p.id === id);
+      const product = products?.find((p) => p.id === id);
       if (!product) throw new Error("Product not found");
 
       const newImageUrl = await replaceProductImage(
@@ -175,10 +162,6 @@ export default function ProductList() {
 
       if (error) throw error;
 
-      setProducts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, image_url: newImageUrl } : p))
-      );
-
       toast.success("Image updated successfully!", { id: toastId });
     } catch (error) {
       console.error(error);
@@ -191,16 +174,16 @@ export default function ProductList() {
   return (
     <>
       <Activity mode={productsLoading ? "visible" : "hidden"}>
-        <Spinner className="mx-auto my-5" />
+        <p>Products Loading</p> <Spinner className="mx-auto my-5" />
       </Activity>
       <Activity mode={productsLoading ? "hidden" : "visible"}>
         <div className="grid md:grid-cols-2 gap-4 my-6 w-full max-w-lg md:max-w-xl lg:max-w-2xl">
-          {products.length === 0 ? (
+          {products?.length === 0 ? (
             <p className="text-center text-muted-foreground text-sm">
               No products availabe.
             </p>
           ) : (
-            products.map((product) => (
+            products?.map((product) => (
               <div key={product.id} className="">
                 <>
                   <Card className="rounded shadow-none border">
@@ -385,7 +368,12 @@ function EditProductDialog({ product }: { product: ProductProps }) {
         </Button>
       </DialogTrigger>
       <DialogContent className="rounded">
-        <DialogHeader>Edit Product</DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Edit Product</DialogTitle>
+          <DialogDescription hidden>
+            You can edit data of existing product
+          </DialogDescription>
+        </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>

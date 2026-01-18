@@ -29,9 +29,11 @@ import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
 import KPICard from "@/components/dashboard/KPICard";
 import { ProductProfitChart } from "@/components/dashboard/ProductProfitChart";
 import { useIsMobile } from "@/hook/useIsMobile";
+import { useProfile } from "@/queries/useProfile";
 
 const Dashboard = () => {
-  const { profile, businessName } = useAppContext();
+  const { businessName } = useAppContext();
+  const { data: profile } = useProfile();
   const isMobile = useIsMobile();
   const [range, setRange] = useState<AnalyticsRange>("7d");
   const [period, setPeriod] = useState<AnalyticsPeriod>("day");

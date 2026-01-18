@@ -4,7 +4,6 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { transactionSchema } from "@/lib/schemas";
 import { z } from "zod";
-import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,11 +15,13 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import type { ProductProps } from "@/lib/types";
-import { useAppContext } from "@/hook/useAppContext";
 import ProductCard from "./ProductCard";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 import CarouselButtonGroup from "./CustomButtonGroup";
+import { useProfile } from "@/queries/useProfile";
+import { useProducts } from "@/queries/useProducts";
+import { useAddTransaction } from "@/mutations/useAddTransaction";
 
 type FormValues = z.infer<typeof transactionSchema>;
 
@@ -43,7 +44,10 @@ const responsive = {
 };
 
 export default function TransactionBuilder() {
-  const { products, profile } = useAppContext();
+  const { data: profile } = useProfile();
+  const businessId = profile?.business_id;
+  const { data: products } = useProducts(businessId ?? "");
+  const { mutate: AddTransaction } = useAddTransaction();
   const { control, handleSubmit, watch, setValue, reset } = useForm<FormValues>(
     {
       resolver: zodResolver(transactionSchema),
@@ -93,6 +97,10 @@ export default function TransactionBuilder() {
   };
 
   const onSubmit = async (data: FormValues) => {
+    if (!businessId) {
+      toast.error("businessId not found");
+      return;
+    }
     const payload = data.items.map((i) => ({
       product_id: i.productId,
       quantity: i.quantity,
@@ -101,23 +109,10 @@ export default function TransactionBuilder() {
 
     console.log({ payload });
 
-    const { error } = await supabase.rpc("create_transaction", {
-      bid: profile?.business_id,
-      items: payload,
-    });
+    AddTransaction({ businessId, payload });
 
-    if (error) {
-      toast.error(error.message || "Failed to create transaction");
-      console.error(error.message, "line 93");
-      return;
-    }
-
-    toast.success("Transaction completed");
     reset();
   };
-
-  //const isMobile =
-  //   typeof window !== "undefined" && /Mobi|Android/i.test(navigator.userAgent);
 
   return (
     <Card className="rounded shadow-none border">
@@ -127,26 +122,32 @@ export default function TransactionBuilder() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 relative">
-        <Carousel
-          responsive={responsive}
-          removeArrowOnDeviceType={["mobile"]}
-          containerClass="carousel-container"
-          swipeable={true}
-          autoPlaySpeed={2000}
-          itemClass="carousel-item-padding-40-px"
-          renderButtonGroupOutside={true}
-          arrows={false}
-          customButtonGroup={<CarouselButtonGroup />}
-        >
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} onAdd={addItem} />
-          ))}
-        </Carousel>
+        {products && products.length > 0 ? (
+          <Carousel
+            responsive={responsive}
+            removeArrowOnDeviceType={["mobile"]}
+            containerClass="carousel-container"
+            swipeable={true}
+            autoPlaySpeed={2000}
+            itemClass="carousel-item-padding-40-px"
+            renderButtonGroupOutside={true}
+            arrows={false}
+            customButtonGroup={<CarouselButtonGroup />}
+          >
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} onAdd={addItem} />
+            ))}
+          </Carousel>
+        ) : (
+          <div>
+            <p>No products found.</p>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex-col gap-1.5">
         {fields.map((field, index) => {
           const item = watchedItems[index];
-          const product = products.find((p) => p.id === item.productId);
+          const product = products?.find((p) => p.id === item.productId);
           const maxStock = product?.stock || 0;
           const isMaxed =
             product && watchedItems[index].quantity >= product.stock;

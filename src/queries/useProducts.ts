@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import type { ProductProps } from "@/lib/types";
 
 export function useProducts(businessId: string) {
   return useQuery({
     queryKey: ["products", businessId],
     enabled: !!businessId,
-    queryFn: async () => {
+    queryFn: async (): Promise<ProductProps[]> => {
       const { data, error } = await supabase
         .from("products")
         .select("*")

@@ -21,7 +21,8 @@ import {
 } from "../ui/card";
 import { Spinner } from "../ui/spinner";
 import { supabase } from "@/lib/supabaseClient";
-import { useAppContext } from "@/hook/useAppContext";
+import { useTransactions } from "@/queries/useTransactions";
+import { useProfile } from "@/queries/useProfile";
 
 export default function TransactionList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -29,63 +30,39 @@ export default function TransactionList() {
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
   const [pendingVerifyId, setPendingVerifyId] = useState<string | null>(null);
 
-  const { transactions, setTransactions, transactionsLoading, profile } =
-    useAppContext();
-
+  const { data: profile } = useProfile();
+  const businessId = profile?.business_id;
+  const { data: transactions, isLoading: transactionsLoading } =
+    useTransactions(businessId ?? "");
   console.log({ transactions });
 
   const handleVerify = async (transactionId: string) => {
     if (profile?.role !== "owner") return;
-    setTransactions((prev) =>
-      prev.map((tx) =>
-        tx.id === transactionId ? { ...tx, verified: true } : tx
-      )
-    );
+
     const { error } = await supabase
       .from("transactions")
       .update({
         verified: true,
       })
       .eq("id", transactionId);
-    console.log("after verifying...");
+
     if (error) {
-      console.error(error);
       toast.error("Failed to verify transaction");
-      setTransactions((prev) =>
-        prev.map((tx) =>
-          tx.id === transactionId ? { ...tx, verified: false } : tx
-        )
-      );
-      return;
+      throw error;
     }
     toast.success("Transaction verified");
   };
 
   const handleDelete = async (transactionId: string) => {
     if (profile?.role !== "owner") return;
-    const deletedTx = transactions.find((t) => t.id === transactionId);
-    setTransactions((prev) =>
-      prev
-        .filter((tx) => tx.id !== transactionId)
-        .sort((a, b) => {
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-        })
-    );
 
     const { error } = await supabase
       .from("transactions")
       .delete()
       .eq("id", transactionId);
     if (error) {
-      console.error("Failed to delete transaction");
       toast.error("Failed to delete transaction");
-
-      if (deletedTx) {
-        setTransactions((prev) => [...prev, deletedTx]);
-      }
-      return;
+      throw error;
     }
 
     toast.success("Transaction deleted");
@@ -98,12 +75,12 @@ export default function TransactionList() {
       </Activity>
       <Activity mode={transactionsLoading ? "hidden" : "visible"}>
         <div className="my-6 space-y-4">
-          {transactions.length === 0 && (
+          {transactions?.length === 0 && (
             <p className="text-center text-muted-foreground text-sm">
               No transactions availabe yet : |
             </p>
           )}
-          {transactions.map((tx, i) => {
+          {transactions?.map((tx, i) => {
             return (
               <Card
                 className="rounded shadow-none border"

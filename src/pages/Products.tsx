@@ -1,13 +1,22 @@
 import AddProduct from "@/components/product/AddProduct";
 import ProductList from "@/components/product/ProductList";
-import { useAppContext } from "@/hook/useAppContext";
+import { Spinner } from "@/components/ui/spinner";
+import { useProfile } from "@/queries/useProfile";
+import { useProductRealtime } from "@/realtime/useProductsRealtime";
 
 export default function ProductsPage() {
-  const { profile, profileLoading } = useAppContext();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const businessId = profile?.business_id;
 
-  if (profileLoading) return <p>Loading...</p>;
+  useProductRealtime(businessId);
 
-  if (!profile) return;
+  if (profileLoading)
+    return (
+      <div className="flex justify-center items-center">
+        <p>Page Loading</p>
+        <Spinner />
+      </div>
+    );
 
   return (
     <div className="py-6 flex flex-col items-center">
