@@ -48,7 +48,7 @@ export function ProductProfitChart({
   }, [data]);
 
   return (
-    <Card className="md:col-span-2 flex flex-col border-none shadow-none bg-white">
+    <Card className="md:col-span-2 flex flex-col border-none shadow-none bg-white overflow-x-scroll">
       <CardHeader className="items-center pb-0">
         <CardTitle>Profit by Product</CardTitle>
         <CardDescription>Top contributors to revenue</CardDescription>

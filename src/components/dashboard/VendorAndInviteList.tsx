@@ -1,5 +1,4 @@
 import { useState, Activity } from "react";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -17,63 +16,34 @@ import {
   ItemActions,
 } from "@/components/ui/item";
 import { Button } from "../ui/button";
-import { supabase } from "@/lib/supabaseClient";
-import { useAppContext } from "@/hook/useAppContext";
 import { Loader2 } from "lucide-react";
+import { useRemoveVendor } from "@/mutations/useRemoveVendor";
+import { useCancelInvite } from "@/mutations/useCancelInvite";
+import { useProfile } from "@/queries/useProfile";
+import { useVendors } from "@/queries/useVendors";
+import { useInvites } from "@/queries/useInvites";
 
 const VendorAndInviteList = () => {
   const [pendingDelete, setPendingDelete] = useState<{
     id: string;
     type: "vendor" | "invite";
   } | null>(null);
-  const {
-    profile,
-    vendorsLoading,
-    vendors,
-    setVendors,
-    invitesLoading,
-    invites,
-    setInvites,
-  } = useAppContext();
+  const { data: profile } = useProfile();
+  const { data: vendors, isLoading: vendorsLoading } = useVendors(
+    profile?.business_id ?? "",
+  );
+  const { data: invites, isLoading: invitesLoading } = useInvites(profile);
+  const { mutate: removeVendor } = useRemoveVendor();
+  const { mutate: cancelInvite } = useCancelInvite();
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
     const { id, type } = pendingDelete;
 
     if (type === "vendor") {
-      const removedVendor = vendors.find((v) => v.id === id);
-      setVendors((prev) => prev.filter((v) => v.id !== id));
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({ business_id: null, role: "unassigned" })
-        .eq("id", id);
-
-      if (error) {
-        console.log("error removing vendors:", error);
-        toast.error("Failed to remove vendor");
-
-        if (removedVendor) {
-          setVendors((prev) => [...prev, removedVendor]);
-        }
-      }
-
-      toast.success("Vendor removed.");
+      removeVendor(id);
     } else {
-      const canceledInvite = invites.find((i) => i.id === id);
-      setInvites((prev) => prev.filter((i) => i.id !== id));
-
-      const { error } = await supabase.from("invites").delete().eq("id", id);
-
-      if (error) {
-        console.log("error canceling invite:", error);
-        toast.error("Failed to cancel invite");
-
-        if (canceledInvite) {
-          setInvites((prev) => [...prev, canceledInvite]);
-        }
-      }
-      toast.success("Invite cancelled.");
+      cancelInvite(id);
     }
     setPendingDelete(null);
   };
@@ -100,11 +70,11 @@ const VendorAndInviteList = () => {
     <div className="mt-3">
       <h2 className="font-semibold mb-2">Vendors</h2>
 
-      {vendors.length === 0 && invites.length === 0 ? (
+      {vendors?.length === 0 && invites?.length === 0 ? (
         <p className="text-sm text-gray-500">No vendors yet.</p>
       ) : (
         <div className="space-y-2">
-          {vendors.map((v, i) => (
+          {vendors?.map((v, i) => (
             <Item
               variant="outline"
               className="transition-colors rounded shadow-none border"
@@ -133,7 +103,7 @@ const VendorAndInviteList = () => {
             </Item>
           ))}
 
-          {invites.map((invite) => (
+          {invites?.map((invite) => (
             <Item
               variant="outline"
               className="rounded shadow-none border"

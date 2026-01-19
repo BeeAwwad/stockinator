@@ -30,6 +30,8 @@ import KPICard from "@/components/dashboard/KPICard";
 import { ProductProfitChart } from "@/components/dashboard/ProductProfitChart";
 import { useIsMobile } from "@/hook/useIsMobile";
 import { useProfile } from "@/queries/useProfile";
+import { useInvitesRealtime } from "@/realtime/useInvitesRealtime";
+import { useVendorsRealtime } from "@/realtime/useVendorsRealtime";
 
 const Dashboard = () => {
   const { businessName } = useAppContext();
@@ -61,6 +63,8 @@ const Dashboard = () => {
       .finally(() => setLoading(false));
   }, [profile?.business_id, range, period]);
 
+  useInvitesRealtime(profile?.business_id);
+  useVendorsRealtime(profile?.business_id);
   return (
     <>
       <div className="py-6 space-y-6">
