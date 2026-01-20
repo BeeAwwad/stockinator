@@ -192,7 +192,9 @@ const Navbar = () => {
               <Activity mode={signOutLoading ? "visible" : "hidden"}>
                 <Spinner />
               </Activity>
-              <LogOut size={15} />
+              <Activity mode={signOutLoading ? "hidden" : "visible"}>
+                <LogOut size={15} />
+              </Activity>
             </TooltipTrigger>
             <TooltipContent>
               <p>Log Out?</p>

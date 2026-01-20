@@ -11,7 +11,6 @@ import { Loader2, Bell } from "lucide-react";
 import { toast } from "sonner";
 import type { InviteProps } from "@/lib/types";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabaseClient";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -21,15 +20,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useAppContext } from "@/hook/useAppContext";
+import { useAcceptInvite } from "@/mutations/useAcceptInvite";
+import { useProfile } from "@/queries/useProfile";
+import { useInvites } from "@/queries/useInvites";
+import { useCancelInvite } from "@/mutations/useCancelInvite";
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { profile, invites, invitesLoading, reloadProfile } = useAppContext();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedInvite, setSelectedInvite] = useState<InviteProps | null>(
-    null
+    null,
   );
+  const { data: profile } = useProfile();
+  const { data: invites, isLoading: invitesLoading } = useInvites(profile);
+  const { mutate: acceptInvite } = useAcceptInvite();
+  const { mutate: declineInvite } = useCancelInvite();
 
   if (!profile) {
     navigate("/login");
@@ -39,24 +44,12 @@ export default function Notifications() {
   const handleAcceptInvite = async (invite: InviteProps) => {
     if (!profile) return;
     try {
-      const { error } = await supabase.rpc("accept_business_invite", {
-        invite_id: invite.id,
-      });
-
-      if (error) {
-        toast.error("Failed to accept invite.");
-        throw error;
-      }
-      await reloadProfile();
-
-      toast.success("Invite accepted! You've joined the business.");
+      acceptInvite(invite.id);
       setInviteDialogOpen(false);
       setSelectedInvite(null);
       setTimeout(() => navigate("/"), 1500);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to accept invite.");
-
       setInviteDialogOpen(false);
       setSelectedInvite(null);
     }
@@ -66,28 +59,15 @@ export default function Notifications() {
     if (!profile) return;
     const { id, invited_by } = invite;
 
-    try {
-      if (!id || !invited_by) {
-        toast.error("Invalid invite data");
-        throw new Error("Missing IDs");
-      }
-
-      const { error: updateErr } = await supabase
-        .from("invites")
-        .update({ status: "declined" })
-        .eq("id", id);
-
-      if (updateErr) throw updateErr;
-
-      toast.success("Invite declined.");
-    } catch (error) {
-      console.error(error);
-      toast.error("Error declining invite.");
+    if (!id || !invited_by) {
+      toast.error("Invalid invite data");
+      throw new Error("Missing IDs");
     }
+    declineInvite(id);
   };
 
-  const personalInvites = invites.filter(
-    (invite) => invite.invited_user_id === profile.id
+  const personalInvites = invites?.filter(
+    (invite) => invite.invited_user_id === profile.id,
   );
 
   console.log({ personalInvites });
@@ -98,7 +78,7 @@ export default function Notifications() {
         Notifications
       </h2>
 
-      <Activity mode={personalInvites.length === 0 ? "visible" : "hidden"}>
+      <Activity mode={personalInvites?.length === 0 ? "visible" : "hidden"}>
         <p className="text-muted-foreground">No notifications</p>
       </Activity>
 
@@ -108,7 +88,7 @@ export default function Notifications() {
         </div>
       </Activity>
 
-      {personalInvites.map((invite) => (
+      {personalInvites?.map((invite) => (
         <Item className="rounded shadow-none border" key={invite.id}>
           <ItemMedia>
             <Bell className="size-5" />

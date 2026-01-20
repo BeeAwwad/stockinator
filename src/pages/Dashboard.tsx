@@ -1,7 +1,6 @@
 import { useState, Activity, useEffect } from "react";
 import InviteVendor from "@/components/dashboard/InviteVendors";
 import VendorAndInviteList from "@/components/dashboard/VendorAndInviteList";
-
 import {
   Card,
   CardContent,
@@ -9,8 +8,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-
-import { useAppContext } from "@/hook/useAppContext";
 import type {
   AnalyticsPeriod,
   AnalyticsRange,
@@ -32,9 +29,10 @@ import { useIsMobile } from "@/hook/useIsMobile";
 import { useProfile } from "@/queries/useProfile";
 import { useInvitesRealtime } from "@/realtime/useInvitesRealtime";
 import { useVendorsRealtime } from "@/realtime/useVendorsRealtime";
+import { useBusinessName } from "@/queries/useBusinessName";
 
 const Dashboard = () => {
-  const { businessName } = useAppContext();
+  const { data: businessName } = useBusinessName();
   const { data: profile } = useProfile();
   const isMobile = useIsMobile();
   const [range, setRange] = useState<AnalyticsRange>("7d");

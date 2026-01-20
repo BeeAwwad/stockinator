@@ -2,10 +2,8 @@ import { Activity, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Item, ItemContent, ItemDescription, ItemActions } from "../ui/item";
 import { Button } from "../ui/button";
-import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { twMerge } from "tailwind-merge";
-import { supabase } from "@/lib/supabaseClient";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,44 +14,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useNavigate } from "react-router-dom";
-import { useAppContext } from "@/hook/useAppContext";
+import { useDeleteBusiness } from "@/mutations/useDeleteBusiness";
+import { Spinner } from "../ui/spinner";
+import { useProfile } from "@/queries/useProfile";
+import { useBusinessName } from "@/queries/useBusinessName";
 
 export const DeleteBusiness = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [businessId, setBusinessId] = useState<string | null>(null);
   const [confirmName, setConfirmName] = useState("");
-  const navigate = useNavigate();
-  const { profile, businessName } = useAppContext();
-  const handleDelete = async (businessId: string) => {
+  const { data: businessName } = useBusinessName();
+  const { data: profile } = useProfile();
+  const { mutate: deleteBusiness, isPending } = useDeleteBusiness();
+
+  const handleDelete = async () => {
     if (profile?.role !== "owner") return;
-    try {
-      await supabase.from("products").delete().eq("business_id", businessId);
-
-      await supabase
-        .from("transactions")
-        .delete()
-        .eq("business_id", businessId);
-
-      await supabase.from("businesses").delete().eq("id", businessId);
-
-      await supabase
-        .from("profiles")
-        .update({ business_id: null, role: "unassigned" })
-        .eq("business_id", businessId);
-
-      toast.success("Business deleted successfully.");
-      navigate("/register-business");
-    } catch (err) {
-      console.error("Failed to delete business:", err);
-      toast.error("Failed to delete business.");
-    }
+    deleteBusiness();
   };
   return (
     <>
       <Card className="rounded">
-        <CardHeader className="border-b">
+        <CardHeader className="border-b flex justify-between">
           <CardTitle>Delete Business</CardTitle>
+          <Activity mode={isPending ? "visible" : "hidden"}>
+            <Spinner />
+          </Activity>
         </CardHeader>
         <CardContent>
           <Activity mode={profile?.role === "owner" ? "visible" : "hidden"}>
@@ -70,7 +54,6 @@ export const DeleteBusiness = () => {
                 <Button
                   className="text-sm rounded bg-primary-100 hover:bg-primary-300 transition-colors"
                   onClick={() => {
-                    setBusinessId(profile?.business_id ?? null);
                     setDeleteDialogOpen(true);
                   }}
                 >
@@ -106,7 +89,7 @@ export const DeleteBusiness = () => {
                   confirmName &&
                     confirmName !== businessName &&
                     "border-primary-300",
-                  confirmName === businessName && "border-primary-400"
+                  confirmName === businessName && "border-primary-400",
                 )}
               />
             </div>
@@ -117,11 +100,8 @@ export const DeleteBusiness = () => {
               className="rounded"
               disabled={confirmName !== businessName}
               onClick={async () => {
-                if (businessId) {
-                  await handleDelete(businessId);
-                  setDeleteDialogOpen(false);
-                  setBusinessId(null);
-                }
+                await handleDelete();
+                setDeleteDialogOpen(false);
               }}
             >
               Confirm

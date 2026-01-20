@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
 type UiState = {
-  signOutLoading: boolean;
-  setSignOutLoading: (v: boolean) => void;
+  darkMode: boolean;
+  setDarkMode: (v: boolean) => void;
 };
 
 export const useUiStore = create<UiState>((set) => ({
-  signOutLoading: false,
-  setSignOutLoading: (signOutLoading) => set({ signOutLoading }),
+  darkMode: false,
+  setDarkMode: (darkMode) => set({ darkMode }),
 }));

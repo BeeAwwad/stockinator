@@ -10,16 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { supabase } from "@/lib/supabaseClient";
 import { useProfile } from "@/queries/useProfile";
-import { toast } from "sonner";
+import { useCreateBusiness } from "@/mutations/useCreateBusiness";
 
 const CreateBusiness = () => {
   const [businessName, setBusinessName] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { data: profile } = useProfile();
-
+  const { mutate: createBusiness, isPending } = useCreateBusiness();
   useEffect(() => {
     const checkExistingBusiness = async () => {
       if (!profile) return;
@@ -34,24 +32,7 @@ const CreateBusiness = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessName || !profile) return;
-
-    setLoading(true);
-
-    try {
-      const { error: bizErr } = await supabase.rpc("create_new_business", {
-        biz_name: businessName,
-      });
-
-      if (bizErr) {
-        toast.error(bizErr.message ?? "error creating business");
-        throw bizErr;
-      }
-      navigate("/");
-    } catch (err) {
-      console.error("Error creating business:", err);
-    } finally {
-      setLoading(false);
-    }
+    createBusiness(businessName);
   };
 
   return (
@@ -72,8 +53,8 @@ const CreateBusiness = () => {
             />
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Creating..." : "Create Business"}
+            <Button type="submit" disabled={isPending} className="w-full">
+              {isPending ? "Creating..." : "Create Business"}
             </Button>
           </CardFooter>
         </form>

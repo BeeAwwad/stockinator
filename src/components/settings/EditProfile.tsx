@@ -8,19 +8,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { supabase } from "@/lib/supabaseClient";
-import { toast } from "sonner";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Spinner } from "../ui/spinner";
 import { Edit3, User2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { useAppContext } from "@/hook/useAppContext";
+import { useEditProfile } from "@/mutations/useEditProfile";
+import { useProfile } from "@/queries/useProfile";
 
 const EditProfile = () => {
-  const { profile } = useAppContext();
-
+  const { data: profile } = useProfile();
   return (
     <Card className="rounded">
       <CardHeader className="border-b">
@@ -46,31 +44,14 @@ export default EditProfile;
 
 function EditProfileDialog({ profile }: { profile: ProfileProps }) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(profile);
-
-  const { reloadProfile } = useAppContext();
+  const { mutate: editProfile, isPending } = useEditProfile();
   const handleUpdate = async () => {
-    setLoading(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        display_name: formData.display_name,
-        email: formData.email,
-      })
-      .eq("id", profile.id);
-
-    if (error) {
-      toast.error("Update failed.");
-      setOpen(false);
-      setLoading(false);
-      throw error;
-    } else {
-      toast.success("Profile updated!");
-      await reloadProfile();
-      setOpen(false);
-    }
-    setLoading(false);
+    editProfile({
+      displayName: formData?.display_name ?? "",
+      email: formData.email,
+      setOpen,
+    });
   };
 
   return (
@@ -117,9 +98,9 @@ function EditProfileDialog({ profile }: { profile: ProfileProps }) {
           <Button
             onClick={handleUpdate}
             className="bg-primary-100 rounded hover:bg-primary-400 transition-colors"
-            disabled={loading}
+            disabled={isPending}
           >
-            {loading && <Spinner />} Save Changes
+            {isPending && <Spinner />} Save Changes
           </Button>
         </DialogFooter>
       </DialogContent>
