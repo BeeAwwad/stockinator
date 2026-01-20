@@ -18,7 +18,7 @@ export default function Transaction() {
     );
 
   return (
-    <div className="py-6 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl w-full mx-auto">
+    <div className="py-6 max-w-lg md:max-w-xl lg:max-w-2xl w-full mx-auto">
       <TransactionBuilder />
       <TransactionList />
     </div>

@@ -57,7 +57,7 @@ export default function AddProduct() {
   if (profile?.role !== "owner") return null;
 
   return (
-    <Card className="w-full grid rounded shadow-none border gap-4 mt-8 max-w-lg md:max-w-xl lg:max-w-2xl">
+    <Card className="w-full grid rounded shadow-none border gap-4 max-w-lg md:max-w-xl lg:max-w-2xl">
       <form
         onSubmit={handleSubmit(handleFormSubmit, (err) => console.log(err))}
       >
