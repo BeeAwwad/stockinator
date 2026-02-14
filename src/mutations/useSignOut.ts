@@ -20,7 +20,7 @@ export function useSignOut() {
       navigate("/login");
     },
     onError: (error) => {
-      toast.success(error.message ?? "Failed to sign out");
+      toast.error(error.message ?? "Failed to sign out");
     },
   });
 }
