@@ -90,7 +90,7 @@ const Dashboard = () => {
           />
           <KPICard
             name={"top product"}
-            data={summary?.top_product_name ?? "Top Product Na"}
+            data={summary?.top_product_name ?? "Na"}
           />
           <KPICard
             name={"total profit"}

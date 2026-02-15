@@ -3,7 +3,7 @@ import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import Login from "@/pages/Login";
 import Transaction from "@/pages/Transaction";
-import ProtectedRoute from "@/auth/ProtectedRoute";
+import ProtectedRoute, { ProtectDashboard } from "@/auth/ProtectedRoute";
 import CreateBusiness from "@/pages/CreateBusiness";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
@@ -20,9 +20,9 @@ const AppRoutes = () => {
       <Route
         path="/"
         element={
-          <ProtectedRoute>
+          <ProtectDashboard>
             <Dashboard />
-          </ProtectedRoute>
+          </ProtectDashboard>
         }
       />
       <Route

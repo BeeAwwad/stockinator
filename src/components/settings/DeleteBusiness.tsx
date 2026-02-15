@@ -26,6 +26,8 @@ export const DeleteBusiness = () => {
   const { data: profile } = useProfile();
   const { mutate: deleteBusiness, isPending } = useDeleteBusiness();
 
+  if (profile?.role !== "owner") return;
+
   const handleDelete = async () => {
     if (profile?.role !== "owner") return;
     deleteBusiness();

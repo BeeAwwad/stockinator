@@ -6,6 +6,7 @@ import { Spinner } from "./ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { useProfile } from "@/queries/useProfile";
 import { useSignOut } from "@/mutations/useSignOut";
+import { useIsMobile } from "@/hook/useIsMobile";
 
 const NavLink = ({
   text,
@@ -31,6 +32,7 @@ const NavLink = ({
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
   const { data: profile } = useProfile();
@@ -151,6 +153,13 @@ const Navbar = () => {
                 <NavLink
                   link="/notifications"
                   text="Notifications"
+                  onClick={closeNavbar}
+                />
+              </Activity>
+              <Activity mode={profile && isMobile ? "visible" : "hidden"}>
+                <NavLink
+                  link="/settings"
+                  text="Settings"
                   onClick={closeNavbar}
                 />
               </Activity>
