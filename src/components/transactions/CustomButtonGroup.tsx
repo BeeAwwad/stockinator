@@ -59,18 +59,18 @@ export const CarouselButtonGroup = ({
   const isRightDisabled = currentSlide >= totalItems - slidesToShow;
 
   return (
-    <div className="hidden absolute overflow-x-visible w-full right-0 top-1/2 md:flex gap-2 justify-between z-10">
+    <div className="absolute overflow-x-visible w-full right-0 top-1/2 flex gap-2 justify-between z-10">
       <ArrowButton
         direction="left"
         onClick={() => previous?.()}
-        className={"-left-11 relative"}
+        className={"-left-3.5 md:-left-11 relative"}
         isLeftDisabled={isLeftDisabled}
       />
 
       <ArrowButton
         direction="right"
         onClick={() => next?.()}
-        className={"-right-11 relative"}
+        className={"-right-3.5 md:-right-11 relative"}
         isRightDisabled={isRightDisabled}
       />
     </div>

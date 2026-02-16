@@ -18,9 +18,9 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
           onAdd(product);
         }
       }}
-      className="relative cursor-pointer border rounded p-3 group hover:px-3.5 active:px-3.5 transition-all mr-3 flex flex-col gap-2"
+      className="relative cursor-pointer shadow-xs bg-slate-100 rounded p-3 group hover:px-3.5 active:px-3.5 transition-all mr-3 flex flex-col gap-2"
     >
-      <div className="overflow-hidden h-20 max-h-20 rounded">
+      <div className="overflow-hidden h-32 md:h-20 max-h-32 md:max-h-20 rounded">
         <LazyLoadImage
           placeholderSrc="/placeholder.png"
           effect="black-and-white"

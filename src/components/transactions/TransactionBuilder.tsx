@@ -38,8 +38,8 @@ const responsive = {
   },
   mobile: {
     breakpoint: { max: 464, min: 0 },
-    items: 2,
-    slidesToSlide: 2,
+    items: 1,
+    slidesToSlide: 1,
   },
 };
 
@@ -52,7 +52,7 @@ export default function TransactionBuilder() {
     {
       resolver: zodResolver(transactionSchema),
       defaultValues: { items: [] },
-    }
+    },
   );
 
   const { fields, append, remove, update } = useFieldArray({
@@ -63,7 +63,7 @@ export default function TransactionBuilder() {
   const watchedItems = watch("items");
   const total = watchedItems.reduce(
     (sum, i) => sum + i.quantity * i.unitPrice,
-    0
+    0,
   );
 
   const addItem = (product: ProductProps) => {
@@ -188,7 +188,7 @@ export default function TransactionBuilder() {
                     if (val > maxStock) {
                       val = maxStock;
                       toast.warning(
-                        `Only ${maxStock} units of ${product?.name} in stock`
+                        `Only ${maxStock} units of ${product?.name} in stock`,
                       );
                     }
                     setValue(`items.${index}.quantity`, val);
