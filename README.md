@@ -55,6 +55,8 @@ On the frontend I used react, tailwind, react-query and zustand, react-hook-form
 ---
 
 ## What I Learnt
-
+- **Backend Database:** This project was my introduction what it's like having a backend, even though it was a Baas (supabase). I got introduced to rls, rpc functions, tables connecting to each other (relation database).
+- **React Query:** I also learned to use react query to fetch data. It also solved the issue of having to refetch data whenever I change to other pages without using the context api.
+  
 ---
 
